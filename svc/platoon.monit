@@ -1,0 +1,4 @@
+check process platoon pidfile ${VARPATH}/platoon.pid
+  mode manual
+  start "${BINPATH}/bake -m spire.tasks spire.daemon config=${SVCPATH}/platoon/platoon.yaml"
+  stop "/bin/bash -c '/bin/kill $(<${VARPATH}/platoon.pid)'"

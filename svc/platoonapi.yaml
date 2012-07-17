@@ -1,0 +1,29 @@
+uwsgi:
+  daemonize: ${LOGPATH}/platoonapi.log
+  group: uwsgi
+  home: ${ENVPATH}/python
+  http-socket: 127.0.0.1:4321
+  master: true
+  module: spire.drivers.uwsgi
+  pidfile: ${VARPATH}/platoonapi.pid
+  processes: 4
+  procname-prefix-spaced: "[platoon]"
+  uid: uwsgi
+  vacuum: true
+components:
+  - platoon.Platoon
+configuration:
+  schema:platoon:
+    admin_url: postgresql://postgres@localhost/postgres
+    url: postgresql://postgres@localhost/platoon
+logging:
+  formatters:
+    standard:
+      (): spire.support.logs.LogFormatter
+  handlers:
+    stream:
+      class: logging.StreamHandler
+      formatter: standard
+  root:
+    level: DEBUG
+    handlers: [stream]
