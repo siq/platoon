@@ -1,6 +1,6 @@
 uwsgi:
   daemonize: ${LOGPATH}/platoonapi.log
-  group: uwsgi
+  group: platoon
   home: ${ENVPATH}/python
   http-socket: 127.0.0.1:4321
   master: true
@@ -8,7 +8,7 @@ uwsgi:
   pidfile: ${VARPATH}/platoonapi.pid
   processes: 4
   procname-prefix-spaced: "[platoon]"
-  uid: uwsgi
+  uid: platoon
   vacuum: true
 components:
   - platoon.Platoon
