@@ -108,7 +108,7 @@ class Task(Model):
     id = Identifier()
     tag = Text(nullable=False)
     description = Text()
-    status = Enumeration('pending completed aborted retrying failed',
+    status = Enumeration('pending completed aborted executing retrying failed',
         nullable=False, default='pending')
     occurrence = DateTime(nullable=False)
     retry_backoff = Float()
@@ -118,10 +118,14 @@ class Task(Model):
     failed_action_id = ForeignKey('action.id')
     completed_action_id = ForeignKey('action.id')
 
-    action = relationship('Action', primaryjoin='Action.id==Task.action_id')
-    failed_action = relationship('Action', primaryjoin='Action.id==Task.failed_action_id')
-    completed_action = relationship('Action', primaryjoin='Action.id==Task.completed_action_id')
-    executions = relationship('Execution', backref='task', order_by='Execution.attempt')
+    action = relationship('Action', primaryjoin='Action.id==Task.action_id',
+        cascade='all')
+    failed_action = relationship('Action', primaryjoin='Action.id==Task.failed_action_id',
+        cascade='all')
+    completed_action = relationship('Action', primaryjoin='Action.id==Task.completed_action_id',
+        cascade='all')
+    executions = relationship('Execution', backref='task', order_by='Execution.attempt',
+        cascade='all,delete-orphan')
 
     def __repr__(self):
         return 'Task(%s, %s)' % (self.id, self.tag)
@@ -158,12 +162,14 @@ class Task(Model):
         if status == COMPLETED:
             self.status = execution.status = 'completed'
             log('info', '%s completed (attempt %d)', repr(self), execution.attempt)
+            log('debug', 'result for %s:\n%s', repr(self), execution.result)
             if self.completed_action_id:
                 session.add(Task(tag='%s-completed' % self.tag, occurrence=datetime.utcnow(),
                     action_id=self.completed_action_id))
         elif execution.attempt == (self.retry_limit + 1):
             self.status = 'failed'
             log('error', '%s failed (attempt %d), aborting', repr(self), execution.attempt)
+            log('debug', 'result for %s:\n%s', repr(self), execution.result)
             if self.failed_action_id:
                 session.add(Task(tag='%s-failed' % self.tag, occurrence=datetime.utcnow(),
                     action_id=self.failed_action_id))
@@ -175,6 +181,7 @@ class Task(Model):
             else:
                 log('info', '%s not yet complete (attempt %s), retrying',
                     repr(self), execution.attempt)
+            log('debug', 'result for %s:\n%s', repr(self), execution.result)
 
     def _calculate_retry(self, execution):
         timeout = self.retry_timeout

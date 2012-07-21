@@ -44,13 +44,18 @@ class TaskQueue(Component, Daemon):
         threads = self.threads
 
         session = schema.session
-        query = session.query(Task).filter(Task.status.in_(('pending', 'retrying')))
+        pending = session.query(Task).filter(Task.status.in_(('pending', 'retrying')))
 
         while True:
             idler.idle()
             try:
-                now = datetime.utcnow()
-                for task in query.filter(Task.occurrence <= now):
+                query = pending.filter(Task.occurrence <= datetime.utcnow())
+                tasks = list(query)
+
+                query.update({'status': 'executing'}, False)
+                session.commit()
+
+                for task in tasks:
                     log('info', 'processing %s', repr(task))
                     package = TaskPackage(task, schema.get_session(True))
                     threads.enqueue(package)
