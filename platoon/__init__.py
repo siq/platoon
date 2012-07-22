@@ -7,7 +7,9 @@ from platoon import resources
 from platoon.queue import TaskQueue
 
 API = Bundle('platoon',
-    mount(resources.Task, 'platoon.controllers.TaskController'),
+    mount(resources.Schedule, 'platoon.controllers.ScheduleController'),
+    mount(resources.RecurringTask, 'platoon.controllers.RecurringTaskController'),
+    mount(resources.ScheduledTask, 'platoon.controllers.ScheduledTaskController'),
 )
 
 class APIServer(MeshServer):

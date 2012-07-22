@@ -1,6 +1,19 @@
 from mesh.standard import *
 from scheme import *
 
+class Schedule(Resource):
+    """A task schedule."""
+
+    name = 'schedule'
+    version = 1
+
+    class schema:
+        id = UUID(operators='equal')
+        name = Text()
+        schedule = Enumeration('fixed', nonempty=True)
+        anchor = DateTime(nonempty=True, timezone=UTC)
+        interval = Integer(nonempty=True)
+
 TaskStructure = Structure(
     structure={
         'http-request': {
@@ -22,21 +35,27 @@ TaskStructure = Structure(
 class Task(Resource):
     """A queue task."""
 
-    name = 'task'
-    version = 1
-
     class schema:
         id = UUID(operators='equal')
         tag = Text(nonempty=True, operators='equal')
         description = Text()
-        status = Enumeration('pending completed aborted retrying failed', oncreate=False)
-        occurrence = DateTime(nonnull=True, timezone=UTC)
-        retry_backoff = Float(nonnull=True)
+        retry_backoff = Float()
         retry_limit = Integer(nonnull=True, default=2)
         retry_timeout = Integer(nonnull=True, default=300)
         task = TaskStructure.clone(required=True)
         completed = TaskStructure
         failed = TaskStructure
+
+class ScheduledTask(Task):
+    """A scheduled task."""
+
+    name = 'scheduledtask'
+    version = 1
+
+    class schema:
+        status = Enumeration('pending executing retrying aborted completed failed',
+            nonnull=True, oncreate=False)
+        occurrence = DateTime(nonnull=True, timezone=UTC)
         executions = Sequence(Structure({
             'attempt': Integer(),
             'status': Enumeration('completed failed'),
@@ -44,3 +63,14 @@ class Task(Resource):
             'completed': DateTime(timezone=UTC),
             'result': Text(),
         }), nonnull=True, deferred=True, readonly=True)
+
+class RecurringTask(Task):
+    """A recurring task."""
+
+    name = 'recurringtask'
+    version = 1
+    requests = 'create delete get put query update'
+
+    class schema:
+        status = Enumeration('active inactive', nonnull=True, default='active')
+        schedule_id = UUID(nonempty=True)
