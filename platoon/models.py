@@ -57,7 +57,7 @@ class HttpRequestAction(Action):
 
     action_id = ForeignKey('action.id', nullable=False, primary_key=True)
     url = Text(nullable=False)
-    method = Enumeration('DELETE GET HEAD OPTIONS POST PUT', nullable=False)
+    method = Enumeration('DELETE GET HEAD OPTIONS POST PUT TASK', nullable=False)
     mimetype = Text()
     data = Text()
     headers = Serialized()

@@ -18,7 +18,7 @@ TaskStructure = Structure(
     structure={
         'http-request': {
             'url': Text(nonempty=True),
-            'method': Enumeration('DELETE GET HEAD OPTIONS POST PUT', nonempty=True),
+            'method': Text(nonempty=True),
             'mimetype': Text(),
             'data': Text(),
             'headers': Map(Text(nonempty=True), nonnull=True),
