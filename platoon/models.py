@@ -111,7 +111,7 @@ class Schedule(Model):
     id = Identifier()
     name = Text(unique=True)
     schedule = Enumeration('fixed', nullable=False)
-    anchor = DateTime(nullable=False)
+    anchor = DateTime(nullable=False, timezone=True)
     interval = Integer(nullable=False)
 
     def next(self, occurrence):
@@ -160,7 +160,7 @@ class ScheduledTask(Task):
     task_id = ForeignKey('task.id', nullable=False, primary_key=True)
     status = Enumeration('pending executing retrying aborted completed failed',
         nullable=False, default='pending')
-    occurrence = DateTime(nullable=False)
+    occurrence = DateTime(nullable=False, timezone=True)
     parent_id = ForeignKey('recurring_task.task_id')
 
     parent = relationship('RecurringTask', primaryjoin='RecurringTask.task_id==ScheduledTask.parent_id')
@@ -294,8 +294,8 @@ class Execution(Model):
     task_id = ForeignKey('scheduled_task.task_id', nullable=False)
     attempt = Integer(nullable=False)
     status = Enumeration('completed failed')
-    started = DateTime()
-    completed = DateTime()
+    started = DateTime(timezone=True)
+    completed = DateTime(timezone=True)
     result = Text()
 
 def create_test_task(session, tag, delay=0, status='complete', result=None,

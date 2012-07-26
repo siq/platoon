@@ -6,6 +6,7 @@ class Schedule(Resource):
 
     name = 'schedule'
     version = 1
+    requests = 'create delete get put query update'
 
     class schema:
         id = UUID(operators='equal')
