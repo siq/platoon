@@ -1,0 +1,21 @@
+daemon:
+  detached: false
+components:
+  - platoon.TaskQueue
+configuration:
+  platoon.idler.Idler:
+    timeout: 5
+  schema:platoon:
+    admin_url: postgresql://postgres@locahost/postgres
+    url: postgresql://postgres@localhost/platoon
+logging:
+  formatters:
+    standard:
+      (): spire.support.logs.LogFormatter
+  handlers:
+    stream:
+      class: logging.StreamHandler
+      formatter: standard
+  root:
+    level: DEBUG
+    handlers: [stream]

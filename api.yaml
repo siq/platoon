@@ -1,0 +1,24 @@
+uwsgi:
+  home: /home/jrm/.env/standard
+  http-socket: 127.0.0.1:4321
+  master: true
+  module: spire.drivers.uwsgi
+  processes: 4
+components:
+  - platoon.Platoon
+configuration:
+  schema:platoon:
+    admin_url: postgresql://postgres@localhost/postgres
+    migrations: platoon:migrations
+    url: postgresql://postgres@localhost/platoon
+logging:
+  formatters:
+    standard:
+      (): spire.support.logs.LogFormatter
+  handlers:
+    stream:
+      class: logging.StreamHandler
+      formatter: standard
+  root:
+    level: DEBUG
+    handlers: [stream]
