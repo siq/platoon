@@ -15,6 +15,7 @@ components:
 configuration:
   schema:platoon:
     admin_url: postgresql://postgres@localhost/postgres
+    migrations: platoon:migrations
     url: postgresql://postgres@localhost/platoon
 logging:
   formatters:
