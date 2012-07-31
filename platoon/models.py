@@ -230,7 +230,7 @@ class ScheduledTask(Task):
     def _calculate_retry(self, execution):
         timeout = self.retry_timeout
         if self.retry_backoff is not None:
-            timeout *= (self.retry_backoff * execution.attempt)
+            timeout *= (self.retry_backoff ** execution.attempt)
         return datetime.utcnow() + timedelta(seconds=timeout)
 
 class RecurringTask(Task):
