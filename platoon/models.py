@@ -172,7 +172,7 @@ class ScheduledTask(Task):
             failed_action=None, completed_action=None, description=None,
             retry_backoff=None, retry_limit=2, retry_timeout=300):
 
-        occurrence = occurrence or datetime.utcnow()
+        occurrence = occurrence or datetime.now(UTC)
         task = ScheduledTask(tag=tag, status=status, description=description,
             occurrence=occurrence, retry_backoff=retry_backoff,
             retry_limit=retry_limit, retry_timeout=retry_timeout)
@@ -190,27 +190,27 @@ class ScheduledTask(Task):
         execution = Execution(task_id=self.id, attempt=len(self.executions) + 1)
         session.add(execution)
 
-        execution.started = datetime.utcnow()
+        execution.started = datetime.now(UTC)
         try:
             status, execution.result = self.action.execute()
         except Exception, exception:
             status = FAILED
             execution.result = format_exc()
 
-        execution.completed = datetime.utcnow()
+        execution.completed = datetime.now(UTC)
         if status == COMPLETED:
             self.status = execution.status = 'completed'
             log('info', '%s completed (attempt %d)', repr(self), execution.attempt)
             log('debug', 'result for %s:\n%s', repr(self), execution.result)
             if self.completed_action_id:
-                session.add(Task(tag='%s-completed' % self.tag, occurrence=datetime.utcnow(),
+                session.add(Task(tag='%s-completed' % self.tag, occurrence=datetime.now(UTC),
                     action_id=self.completed_action_id))
         elif execution.attempt == (self.retry_limit + 1):
             self.status = execution.status = 'failed'
             log('error', '%s failed (attempt %d), aborting', repr(self), execution.attempt)
             log('debug', 'result for %s:\n%s', repr(self), execution.result)
             if self.failed_action_id:
-                session.add(Task(tag='%s-failed' % self.tag, occurrence=datetime.utcnow(),
+                session.add(Task(tag='%s-failed' % self.tag, occurrence=datetime.now(UTC),
                     action_id=self.failed_action_id))
         else:
             execution.status = 'failed'
@@ -231,7 +231,7 @@ class ScheduledTask(Task):
         timeout = self.retry_timeout
         if self.retry_backoff is not None:
             timeout *= (self.retry_backoff ** execution.attempt)
-        return datetime.utcnow() + timedelta(seconds=timeout)
+        return datetime.now(UTC) + timedelta(seconds=timeout)
 
 class RecurringTask(Task):
     """A recurring task."""
@@ -265,7 +265,7 @@ class RecurringTask(Task):
         session.add(task)
         if status == 'active':
             session.flush()
-            task.reschedule(session, datetime.utcnow())
+            task.reschedule(session, datetime.now(UTC))
         return task
 
     def reschedule(self, session, occurrence):
