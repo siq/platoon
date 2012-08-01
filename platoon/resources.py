@@ -12,7 +12,7 @@ class Schedule(Resource):
         id = UUID(operators='equal')
         name = Text()
         schedule = Enumeration('fixed', nonempty=True)
-        anchor = DateTime(nonempty=True, timezone=UTC)
+        anchor = DateTime(nonempty=True, utc=True)
         interval = Integer(nonempty=True)
 
 TaskStructure = Structure(
@@ -56,12 +56,12 @@ class ScheduledTask(Task):
     class schema:
         status = Enumeration('pending executing retrying aborted completed failed',
             nonnull=True, oncreate=False)
-        occurrence = DateTime(nonnull=True, timezone=UTC)
+        occurrence = DateTime(nonnull=True, utc=True)
         executions = Sequence(Structure({
             'attempt': Integer(),
             'status': Enumeration('completed failed'),
-            'started': DateTime(timezone=UTC),
-            'completed': DateTime(timezone=UTC),
+            'started': DateTime(utc=True),
+            'completed': DateTime(utc=True),
             'result': Text(),
         }), nonnull=True, deferred=True, readonly=True)
 
