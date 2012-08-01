@@ -4,7 +4,7 @@ uwsgi:
   home: ${ENVPATH}/python
   http-socket: 127.0.0.1:4321
   master: true
-  module: spire.drivers.uwsgi
+  module: spire.runtime.uwsgi
   pidfile: ${VARPATH}/platoonapi.pid
   processes: 4
   procname-prefix-spaced: "[platoon]"
