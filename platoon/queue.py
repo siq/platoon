@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from scheme.timezone import UTC
 from spire.core import Component, Dependency
 from spire.schema import SchemaDependency
 from spire.support.daemon import Daemon
@@ -50,7 +51,7 @@ class TaskQueue(Component, Daemon):
         while True:
             idler.idle()
             try:
-                tasks = list(pending.filter(ScheduledTask.occurrence <= datetime.utcnow()))
+                tasks = list(pending.filter(ScheduledTask.occurrence <= datetime.now(UTC)))
                 if not tasks:
                     continue
 

@@ -227,6 +227,9 @@ class ScheduledTask(Task):
         if parent:
             parent.reschedule(session, self.occurrence)
 
+    def update(self, session, data):
+        raise NotImplemented()
+
     def _calculate_retry(self, execution):
         timeout = self.retry_timeout
         if self.retry_backoff is not None:
@@ -268,11 +271,17 @@ class RecurringTask(Task):
             task.reschedule(session, datetime.now(UTC))
         return task
 
+    def has_pending_task(self, session):
+        query = session.query(ScheduledTask).filter_by(parent_id=self.id, status='pending')
+        return query.count() >= 1
+
     def reschedule(self, session, occurrence):
         if self.status != 'active':
             return
 
+        print 'NOW = ', occurrence
         occurrence = self.schedule.next(occurrence)
+        print 'NEXT = ', occurrence
         task = ScheduledTask(tag=self.tag, status='pending', description=self.description,
             occurrence=occurrence, retry_backoff=self.retry_backoff,
             retry_limit=self.retry_limit, retry_timeout=self.retry_timeout,
@@ -281,6 +290,25 @@ class RecurringTask(Task):
 
         session.add(task)
         return task
+
+    def update(self, session, action=None, failed_action=None, completed_action=None, **params):
+        self.update_with_mapping(params)
+        if action:
+            self.action.update_with_mapping(action)
+        if failed_action:
+            if self.failed_action:
+                self.failed_action.update_with_mapping(failed_action)
+            else:
+                self.failed_action = Action.polymorphic_create(failed_action)
+        if completed_action:
+            if self.completed_action:
+                self.completed_action.update_with_mapping(completed_action)
+            else:
+                self.completed_action = Action.polymorphic_create(completed_action)
+
+        session.flush()
+        if self.status == 'active' and not self.has_pending_task(session):
+            self.reschedule(session, datetime.now(UTC))
 
 class Execution(Model):
     """A task execution."""
