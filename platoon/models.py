@@ -115,6 +115,15 @@ class Schedule(Model):
     interval = Integer(nullable=False)
 
     def next(self, occurrence):
+        occurrence = self._next_occurrence(occurrence)
+
+        now = datetime.now(UTC)
+        if occurrence >= now:
+            return occurrence
+        else:
+            return self._next_occurrence(now)
+
+    def _next_occurrence(self, occurrence):
         schedule = self.schedule
         if schedule == 'fixed':
             return self._next_fixed(occurrence)
@@ -279,9 +288,11 @@ class RecurringTask(Task):
         if self.status != 'active':
             return
 
-        print 'NOW = ', occurrence
+        query = session.query(ScheduledTask).filter_by(status='pending', parent_id=self.id)
+        if query.count() > 0:
+            return
+
         occurrence = self.schedule.next(occurrence)
-        print 'NEXT = ', occurrence
         task = ScheduledTask(tag=self.tag, status='pending', description=self.description,
             occurrence=occurrence, retry_backoff=self.retry_backoff,
             retry_limit=self.retry_limit, retry_timeout=self.retry_timeout,
