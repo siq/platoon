@@ -35,7 +35,7 @@ class TaskController(object):
         self._transpose_struct_fields(data)
         session = self.schema.session
 
-        subject.update(session, data)
+        subject.update(session, **data)
         session.commit()
 
         self.idler.interrupt()
