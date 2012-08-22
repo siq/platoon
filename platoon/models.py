@@ -196,6 +196,10 @@ class ScheduledTask(Task):
         return task
 
     def execute(self, session):
+        parent = None
+        if self.parent_id:
+            parent = session.query(RecurringTask).with_lockmode('update').get(self.parent_id)
+
         execution = Execution(task_id=self.id, attempt=len(self.executions) + 1)
         session.add(execution)
 
@@ -232,7 +236,6 @@ class ScheduledTask(Task):
                     repr(self), execution.attempt)
             log('debug', 'result for %s:\n%s', repr(self), execution.result)
 
-        parent = self.parent
         if parent:
             parent.reschedule(session, self.occurrence)
 

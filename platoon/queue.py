@@ -45,7 +45,7 @@ class TaskQueue(Component, Daemon):
         threads = self.threads
 
         session = schema.session
-        pending = session.query(ScheduledTask).filter(
+        pending = session.query(ScheduledTask).with_lockmode('update').filter(
             ScheduledTask.status.in_(('pending', 'retrying')))
 
         while True:
