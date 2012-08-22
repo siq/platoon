@@ -55,7 +55,7 @@ class HttpRequestAction(Action):
         schema = schema
         tablename = 'http_request_action'
 
-    action_id = ForeignKey('action.id', nullable=False, primary_key=True)
+    action_id = ForeignKey('action.id', nullable=False, primary_key=True, ondelete='CASCADE')
     url = Text(nullable=False)
     method = Enumeration('DELETE GET HEAD OPTIONS POST PUT TASK', nullable=False)
     mimetype = Text()
@@ -150,13 +150,16 @@ class Task(Model):
     retry_backoff = Float()
     retry_limit = Integer(nullable=False, default=2)
     retry_timeout = Integer(nullable=False, default=300)
-    action_id = ForeignKey('action.id', nullable=False)
-    failed_action_id = ForeignKey('action.id')
-    completed_action_id = ForeignKey('action.id')
+    action_id = ForeignKey('action.id', nullable=False, ondelete='CASCADE')
+    failed_action_id = ForeignKey('action.id', ondelete='CASCADE')
+    completed_action_id = ForeignKey('action.id', ondelete='CASCADE')
 
-    action = relationship('Action', primaryjoin='Action.id==Task.action_id')
-    failed_action = relationship('Action', primaryjoin='Action.id==Task.failed_action_id')
-    completed_action = relationship('Action', primaryjoin='Action.id==Task.completed_action_id')
+    action = relationship('Action', primaryjoin='Action.id==Task.action_id',
+        cascade='all')
+    failed_action = relationship('Action', primaryjoin='Action.id==Task.failed_action_id',
+        cascade='all')
+    completed_action = relationship('Action', primaryjoin='Action.id==Task.completed_action_id',
+        cascade='all')
 
 class ScheduledTask(Task):
     """A scheduled task."""
@@ -166,15 +169,16 @@ class ScheduledTask(Task):
         schema = schema
         tablename = 'scheduled_task'
 
-    task_id = ForeignKey('task.id', nullable=False, primary_key=True)
+    task_id = ForeignKey('task.id', nullable=False, primary_key=True, ondelete='CASCADE')
     status = Enumeration('pending executing retrying aborted completed failed',
         nullable=False, default='pending')
     occurrence = DateTime(nullable=False, timezone=True)
-    parent_id = ForeignKey('recurring_task.task_id')
+    parent_id = ForeignKey('recurring_task.task_id', ondelete='CASCADE')
 
-    parent = relationship('RecurringTask', primaryjoin='RecurringTask.task_id==ScheduledTask.parent_id')
+    parent = relationship('RecurringTask', primaryjoin='RecurringTask.task_id==ScheduledTask.parent_id',
+        cascade='all')
     executions = relationship('Execution', backref='task', order_by='Execution.attempt',
-        cascade='all,delete-orphan')
+        cascade='all,delete-orphan', passive_deletes=True)
 
     @classmethod
     def create(cls, session, tag, action, status='pending', occurrence=None,
@@ -256,7 +260,7 @@ class RecurringTask(Task):
         schema = schema
         tablename = 'recurring_task'
 
-    task_id = ForeignKey('task.id', nullable=False, primary_key=True)
+    task_id = ForeignKey('task.id', nullable=False, primary_key=True, ondelete='CASCADE')
     status = Enumeration('active inactive', nullable=False, default='active')
     schedule_id = ForeignKey('schedule.id', nullable=False)
 
@@ -333,7 +337,7 @@ class Execution(Model):
         constraints = [UniqueConstraint('task_id', 'attempt')]
 
     id = Identifier()
-    task_id = ForeignKey('scheduled_task.task_id', nullable=False)
+    task_id = ForeignKey('scheduled_task.task_id', nullable=False, ondelete='CASCADE')
     attempt = Integer(nullable=False)
     status = Enumeration('completed failed')
     started = DateTime(timezone=True)

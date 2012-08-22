@@ -4,7 +4,14 @@ from spire.schema import Schema
 interface = Schema.interface('platoon')
 
 def run_migrations_offline():
-    context.configure(url=interface['url'])
+    engine = interface.get_engine()
+    connection = engine.connect()
+
+    context.configure(connection=connection,
+        compare_type=True,
+        target_metadata=interface.schema.metadata,
+        sqlalchemy_module_prefix=None)
+
     with context.begin_transaction():
         context.run_migrations()
 
