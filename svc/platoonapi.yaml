@@ -3,7 +3,7 @@ uwsgi:
   group: platoon
   home: ${ENVPATH}/python
   http-socket: 127.0.0.1:4321
-  log-date: true
+  log-date: "%%Y-%%m-%%dT%%H:%%M:%%SL UWSGI"
   master: true
   module: spire.runtime.uwsgi
   pidfile: ${VARPATH}/platoonapi.pid
