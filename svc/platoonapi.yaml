@@ -9,7 +9,7 @@ uwsgi:
   pidfile: ${VARPATH}/platoonapi.pid
   processes: 4
   procname-prefix-spaced: "[platoon]"
-  touch-logrotate: ${VARPATH}/platoonapi.logreopen
+  touch-logreopen: ${VARPATH}/platoonapi.logreopen
   uid: platoon
   vacuum: true
 components:
