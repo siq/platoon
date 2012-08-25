@@ -1,6 +1,6 @@
 #!/bin/sh
 logreopen=${VARPATH}/platoonapi.logreopen
-if [[ ! -e "$logreopen" ]]; then
+if [ ! -e "$logreopen" ]; then
   touch $logreopen
 fi
 
