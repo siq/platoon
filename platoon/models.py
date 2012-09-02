@@ -202,7 +202,7 @@ class ScheduledTask(Task):
     def execute(self, session):
         parent = None
         if self.parent_id:
-            parent = session.query(RecurringTask).with_lockmode('update').get(self.parent_id)
+            parent = RecurringTask.load(session, id=self.parent_id, lockmode='update')
 
         execution = Execution(task_id=self.id, attempt=len(self.executions) + 1)
         session.add(execution)
