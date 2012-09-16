@@ -1,6 +1,17 @@
 from mesh.standard import *
 from scheme import *
 
+class Event(Resource):
+    """An event."""
+
+    name = 'event'
+    version = 1
+
+    class schema:
+        id = UUID()
+        topic = Token(nonempty=True)
+        aspects = Map(Text())
+
 class Schedule(Resource):
     """A task schedule."""
 
@@ -24,6 +35,7 @@ TaskStructure = Structure(
             'data': Text(),
             'headers': Map(Text(nonempty=True), nonnull=True),
             'timeout': Integer(nonnull=True, default=30),
+            'injections': Sequence(Text(nonempty=True), nonnull=True),
         },
         'test': {
             'status': Enumeration('complete fail exception', nonempty=True),
@@ -47,6 +59,17 @@ class Task(Resource):
         completed = TaskStructure
         failed = TaskStructure
 
+class RecurringTask(Task):
+    """A recurring task."""
+
+    name = 'recurringtask'
+    version = 1
+    requests = 'create delete get put query update'
+
+    class schema:
+        status = Enumeration('active inactive', nonnull=True, default='active')
+        schedule_id = UUID(nonempty=True)
+
 class ScheduledTask(Task):
     """A scheduled task."""
 
@@ -65,13 +88,13 @@ class ScheduledTask(Task):
             'result': Text(),
         }), nonnull=True, deferred=True, readonly=True)
 
-class RecurringTask(Task):
-    """A recurring task."""
+class SubscribedTask(Task):
+    """A subscribed task."""
 
-    name = 'recurringtask'
+    name = 'subscribedtask'
     version = 1
-    requests = 'create delete get put query update'
 
     class schema:
-        status = Enumeration('active inactive', nonnull=True, default='active')
-        schedule_id = UUID(nonempty=True)
+        topic = Token(nonempty=True)
+        aspects = Map(Text())
+        activation_limit = Integer(minimum=1)

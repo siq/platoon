@@ -4,8 +4,11 @@ from traceback import format_exc
 from urlparse import urlparse
 
 from scheme import UTC
+from scheme.formats import Json
+from spire.core import get_unit
 from spire.schema import *
 from spire.support.logs import LogHelper
+from sqlalchemy.sql import bindparam, text
 
 COMPLETED = 'completed'
 FAILED = 'failed'
@@ -25,7 +28,7 @@ class Action(Model):
         tablename = 'action'
 
     id = Identifier()
-    type = Enumeration('http-request test', nullable=False)
+    type = Enumeration('http-request internal test', nullable=False)
 
 class TestAction(Action):
     """A test action."""
@@ -39,13 +42,34 @@ class TestAction(Action):
     status = Enumeration('complete fail exception', nullable=False)
     result = Text()
 
-    def execute(self):
+    def execute(self, task, session):
         if self.status == 'exception':
             raise Exception('test exception')
         elif self.status == 'complete':
             return COMPLETED, self.result
         else:
             return FAILED, self.result
+
+class InternalAction(Action):
+    """An internal task."""
+
+    class meta:
+        polymorphic_identity = 'internal'
+        schema = schema
+        tablename = 'internal_action'
+
+    action_id = ForeignKey('action.id', nullable=False, primary_key=True, ondelete='CASCADE')
+    purpose = Enumeration('purge', nullable=False, unique=True)
+
+    def execute(self, task, session):
+        if self.purpose == 'purge':
+            self._purge_database(session)
+
+        return COMPLETED
+
+    def _purge_database(self, session):
+        platoon = get_unit('platoon.Platoon')
+        Event.purge(session, platoon.configuration['completed_event_lifetime'])
 
 class HttpRequestAction(Action):
     """An http request action."""
@@ -62,12 +86,13 @@ class HttpRequestAction(Action):
     data = Text()
     headers = Serialized()
     timeout = Integer()
+    injections = Serialized()
 
-    def execute(self):
+    def execute(self, task, session):
         scheme, host, path = urlparse(self.url)[:3]
         connection = HTTPConnection(host=host, timeout=self.timeout)
 
-        body = self.data
+        body = self._prepare_body(task, self.data)
         if body and self.method == 'GET':
             path = '%s/%s' % (path, body)
             body = None
@@ -100,6 +125,21 @@ class HttpRequestAction(Action):
         if content:
             lines.extend(['', content])
         return '\n'.join(lines)
+
+    def _prepare_body(self, task, body):
+        if self.mimetype != 'application/json':
+            return body
+
+        injections, params = self.injections, task.parameters
+        if not (injections and params):
+            return body
+
+        body = (Json.unserialize(body) if body else {})
+        for key in injections:
+            if key in params:
+                body[key] = params[key]
+
+        return Json.serialize(body)
 
 class Schedule(Model):
     """A task schedule."""
@@ -174,6 +214,7 @@ class ScheduledTask(Task):
         nullable=False, default='pending')
     occurrence = DateTime(nullable=False, timezone=True)
     parent_id = ForeignKey('recurring_task.task_id', ondelete='CASCADE')
+    parameters = Serialized()
 
     parent = relationship('RecurringTask', primaryjoin='RecurringTask.task_id==ScheduledTask.parent_id',
         cascade='all')
@@ -209,7 +250,7 @@ class ScheduledTask(Task):
 
         execution.started = datetime.now(UTC)
         try:
-            status, execution.result = self.action.execute()
+            status, execution.result = self.action.execute(self, session)
         except Exception, exception:
             status = FAILED
             execution.result = format_exc()
@@ -242,6 +283,15 @@ class ScheduledTask(Task):
 
         if parent:
             parent.reschedule(session, self.occurrence)
+
+    @classmethod
+    def spawn(cls, template, occurrence=None, **params):
+        occurrence = occurrence or datetime.now(UTC)
+        return cls(tag=template.tag, status='pending', description=template.description,
+            occurrence=occurrence, retry_backoff=template.retry_backoff,
+            retry_limit=template.retry_limit, retry_timeout=template.retry_timeout,
+            action_id=template.action_id, failed_action_id=template.failed_action_id,
+            completed_action_id=template.completed_action_id, **params)
 
     def update(self, session, data):
         raise NotImplemented()
@@ -300,11 +350,7 @@ class RecurringTask(Task):
             return
 
         occurrence = self.schedule.next(occurrence)
-        task = ScheduledTask(tag=self.tag, status='pending', description=self.description,
-            occurrence=occurrence, retry_backoff=self.retry_backoff,
-            retry_limit=self.retry_limit, retry_timeout=self.retry_timeout,
-            action_id=self.action_id, failed_action_id=self.failed_action_id,
-            completed_action_id=self.completed_action_id, parent_id=self.id)
+        task = ScheduledTask.spawn(self, occurrence, parent_id=self.id)
 
         session.add(task)
         return task
@@ -327,6 +373,100 @@ class RecurringTask(Task):
         session.flush()
         if self.status == 'active' and not self.has_pending_task(session):
             self.reschedule(session, datetime.now(UTC))
+
+class SubscribedTask(Task):
+    """A subscribed task."""
+
+    class meta:
+        polymorphic_identity = 'subscribed'
+        schema = schema
+        tablename = 'subscribed_task'
+
+    task_id = ForeignKey('task.id', nullable=False, primary_key=True, ondelete='CASCADE')
+    topic = Token(nullable=False)
+    aspects = Hstore()
+    activation_limit = Integer(minimum=1)
+    activations = Integer(nullable=False, default=0)
+
+    def activate(self, session, description):
+        limit = self.activation_limit
+        if limit is not None and self.activations > limit:
+            return
+
+        task = ScheduledTask.spawn(self, parameters={'event': description})
+        session.add(task)
+
+        self.activations += 1
+        return task
+
+    @classmethod
+    def create(cls, session, tag, action, topic, aspects=None, activation_limit=None,
+            failed_action=None, completed_action=None, description=None,
+            retry_backoff=None, retry_limit=2, retry_timeout=300, id=None):
+
+        task = SubscribedTask(id=id, tag=tag, description=description, topic=topic,
+            aspects=aspects, activation_limit=activation_limit, retry_backoff=retry_backoff,
+            retry_limit=retry_limit, retry_timeout=retry_timeout)
+
+        task.action = Action.polymorphic_create(action)
+        if failed_action:
+            task.failed_action = Action.polymorphic_create(failed_action)
+        if completed_action:
+            task.completed_action = Action.polymorphic_create(completed_action)
+
+        session.add(task)
+        return task
+
+SubscribedTaskAspectsIndex = Index('subscribed_task_aspects_idx', SubscribedTask.aspects,
+    postgresql_using='gist')
+
+class Event(Model):
+    """An event."""
+
+    class meta:
+        schema = schema
+        tablename = 'event'
+
+    id = Identifier()
+    topic = Token(nullable=False)
+    aspects = Hstore()
+    status = Enumeration('pending completed', nullable=False, default='pending')
+    occurrence = DateTime(timezone=True)
+
+    HSTORE_FILTER = text(':aspects @> subscribed_task.aspects',
+        bindparams=[bindparam('aspects', type_=aspects.type)])
+
+    @classmethod
+    def create(cls, session, topic, aspects=None):
+        event = Event(topic=topic, aspects=aspects, occurrence=datetime.now(UTC))
+        session.add(event)
+        return event
+
+    def collate_tasks(self, session):
+        model = SubscribedTask
+        print self.aspects
+        return (session.query(model).with_lockmode('update')
+            .filter(model.topic==self.topic)
+            .filter((model.activation_limit == None) | (model.activations < model.activation_limit))
+            .filter(self.HSTORE_FILTER | (model.aspects == None))
+            .params(aspects=(self.aspects or {})))
+
+    def describe(self):
+        aspects = (self.aspects.copy() if self.aspects is not None else {})
+        aspects['topic'] = self.topic
+        return aspects
+
+    @classmethod
+    def purge(cls, session, lifetime):
+        delta = datetime.now(UTC) - timedelta(days=lifetime)
+        session.query(cls).filter(cls.status == 'completed', occurrence < delta).delete()
+
+    def schedule_tasks(self, session):
+        description = self.describe()
+        for task in self.collate_tasks(session):
+            task.activate(session, description)
+
+        self.status = 'completed'
 
 class Execution(Model):
     """A task execution."""

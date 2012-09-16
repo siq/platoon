@@ -7,6 +7,7 @@ configuration:
     timeout: 5
   schema:platoon:
     admin_url: postgresql://postgres@locahost/postgres
+    hstore: true
     url: postgresql://postgres@localhost/platoon
 logging:
   formatters:
