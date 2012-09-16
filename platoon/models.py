@@ -19,7 +19,7 @@ PARTIAL = 206
 log = LogHelper('platoon')
 schema = Schema('platoon')
 
-class Action(Model):
+class TaskAction(Model):
     """A task action."""
 
     class meta:
@@ -30,7 +30,7 @@ class Action(Model):
     id = Identifier()
     type = Enumeration('http-request internal test', nullable=False)
 
-class TestAction(Action):
+class TestAction(TaskAction):
     """A test action."""
 
     class meta:
@@ -50,7 +50,7 @@ class TestAction(Action):
         else:
             return FAILED, self.result
 
-class InternalAction(Action):
+class InternalAction(TaskAction):
     """An internal task."""
 
     class meta:
@@ -71,7 +71,7 @@ class InternalAction(Action):
         platoon = get_unit('platoon.Platoon')
         Event.purge(session, platoon.configuration['completed_event_lifetime'])
 
-class HttpRequestAction(Action):
+class HttpRequestAction(TaskAction):
     """An http request action."""
 
     class meta:
@@ -141,6 +141,22 @@ class HttpRequestAction(Action):
 
         return Json.serialize(body)
 
+class TaskExecution(Model):
+    """A task execution."""
+
+    class meta:
+        schema = schema
+        tablename = 'execution'
+        constraints = [UniqueConstraint('task_id', 'attempt')]
+
+    id = Identifier()
+    task_id = ForeignKey('scheduled_task.task_id', nullable=False, ondelete='CASCADE')
+    attempt = Integer(nullable=False)
+    status = Enumeration('completed failed')
+    started = DateTime(timezone=True)
+    completed = DateTime(timezone=True)
+    result = Text()
+
 class Schedule(Model):
     """A task schedule."""
 
@@ -194,11 +210,11 @@ class Task(Model):
     failed_action_id = ForeignKey('action.id', ondelete='CASCADE')
     completed_action_id = ForeignKey('action.id', ondelete='CASCADE')
 
-    action = relationship('Action', primaryjoin='Action.id==Task.action_id',
+    action = relationship(TaskAction, primaryjoin='TaskAction.id==Task.action_id',
         cascade='all')
-    failed_action = relationship('Action', primaryjoin='Action.id==Task.failed_action_id',
+    failed_action = relationship(TaskAction, primaryjoin='TaskAction.id==Task.failed_action_id',
         cascade='all')
-    completed_action = relationship('Action', primaryjoin='Action.id==Task.completed_action_id',
+    completed_action = relationship(TaskAction, primaryjoin='TaskAction.id==Task.completed_action_id',
         cascade='all')
 
 class ScheduledTask(Task):
@@ -218,7 +234,7 @@ class ScheduledTask(Task):
 
     parent = relationship('RecurringTask', primaryjoin='RecurringTask.task_id==ScheduledTask.parent_id',
         cascade='all')
-    executions = relationship('Execution', backref='task', order_by='Execution.attempt',
+    executions = relationship(TaskExecution, backref='task', order_by='TaskExecution.attempt',
         cascade='all,delete-orphan', passive_deletes=True)
 
     @classmethod
@@ -231,11 +247,11 @@ class ScheduledTask(Task):
             occurrence=occurrence, retry_backoff=retry_backoff,
             retry_limit=retry_limit, retry_timeout=retry_timeout)
 
-        task.action = Action.polymorphic_create(action)
+        task.action = TaskAction.polymorphic_create(action)
         if failed_action:
-            task.failed_action = Action.polymorphic_create(failed_action)
+            task.failed_action = TaskAction.polymorphic_create(failed_action)
         if completed_action:
-            task.completed_action = Action.polymorphic_create(completed_action)
+            task.completed_action = TaskAction.polymorphic_create(completed_action)
 
         session.add(task)
         return task
@@ -245,7 +261,7 @@ class ScheduledTask(Task):
         if self.parent_id:
             parent = RecurringTask.load(session, id=self.parent_id, lockmode='update')
 
-        execution = Execution(task_id=self.id, attempt=len(self.executions) + 1)
+        execution = TaskExecution(task_id=self.id, attempt=len(self.executions) + 1)
         session.add(execution)
 
         execution.started = datetime.now(UTC)
@@ -325,11 +341,11 @@ class RecurringTask(Task):
             schedule_id=schedule_id, retry_backoff=retry_backoff,
             retry_limit=retry_limit, retry_timeout=retry_timeout, id=id)
 
-        task.action = Action.polymorphic_create(action)
+        task.action = TaskAction.polymorphic_create(action)
         if failed_action:
-            task.failed_action = Action.polymorphic_create(failed_action)
+            task.failed_action = TaskAction.polymorphic_create(failed_action)
         if completed_action:
-            task.completed_action = Action.polymorphic_create(completed_action)
+            task.completed_action = TaskAction.polymorphic_create(completed_action)
 
         session.add(task)
         if status == 'active':
@@ -363,12 +379,12 @@ class RecurringTask(Task):
             if self.failed_action:
                 self.failed_action.update_with_mapping(failed_action)
             else:
-                self.failed_action = Action.polymorphic_create(failed_action)
+                self.failed_action = TaskAction.polymorphic_create(failed_action)
         if completed_action:
             if self.completed_action:
                 self.completed_action.update_with_mapping(completed_action)
             else:
-                self.completed_action = Action.polymorphic_create(completed_action)
+                self.completed_action = TaskAction.polymorphic_create(completed_action)
 
         session.flush()
         if self.status == 'active' and not self.has_pending_task(session):
@@ -408,11 +424,11 @@ class SubscribedTask(Task):
             aspects=aspects, activation_limit=activation_limit, retry_backoff=retry_backoff,
             retry_limit=retry_limit, retry_timeout=retry_timeout)
 
-        task.action = Action.polymorphic_create(action)
+        task.action = TaskAction.polymorphic_create(action)
         if failed_action:
-            task.failed_action = Action.polymorphic_create(failed_action)
+            task.failed_action = TaskAction.polymorphic_create(failed_action)
         if completed_action:
-            task.completed_action = Action.polymorphic_create(completed_action)
+            task.completed_action = TaskAction.polymorphic_create(completed_action)
 
         session.add(task)
         return task
@@ -467,22 +483,6 @@ class Event(Model):
             task.activate(session, description)
 
         self.status = 'completed'
-
-class Execution(Model):
-    """A task execution."""
-
-    class meta:
-        schema = schema
-        tablename = 'execution'
-        constraints = [UniqueConstraint('task_id', 'attempt')]
-
-    id = Identifier()
-    task_id = ForeignKey('scheduled_task.task_id', nullable=False, ondelete='CASCADE')
-    attempt = Integer(nullable=False)
-    status = Enumeration('completed failed')
-    started = DateTime(timezone=True)
-    completed = DateTime(timezone=True)
-    result = Text()
 
 def create_test_task(session, tag, delay=0, status='complete', result=None,
     retry_limit=2, retry_timeout=300):
