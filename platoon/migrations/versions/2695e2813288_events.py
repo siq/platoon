@@ -14,7 +14,7 @@ from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, PrimaryKeyConst
 from sqlalchemy.dialects import postgresql
 
 def upgrade():
-    op.execute("create execution if not exists hstore")
+    op.execute("create extension if not exists hstore")
     op.create_table('event',
         Column('id', UUIDType(), nullable=False),
         Column('topic', TokenType(), nullable=False),
