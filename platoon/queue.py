@@ -60,7 +60,6 @@ class TaskQueue(Component, Daemon):
     def run(self):
         idler = self.idler
         schema = self.schema
-        purge_time = self.configuration['purge_time']
         threads = self.threads
 
         session = schema.session
