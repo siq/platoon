@@ -3,7 +3,7 @@ from httplib import HTTPConnection
 from traceback import format_exc
 from urlparse import urlparse
 
-from scheme import UTC
+from scheme import UTC, current_timestamp
 from scheme.formats import Json
 from spire.core import get_unit
 from spire.schema import *
@@ -65,7 +65,7 @@ class InternalAction(TaskAction):
         if self.purpose == 'purge':
             self._purge_database(session)
 
-        return COMPLETED
+        return COMPLETED, None
 
     def _purge_database(self, session):
         platoon = get_unit('platoon.Platoon')
@@ -357,9 +357,11 @@ class RecurringTask(Task):
         query = session.query(ScheduledTask).filter_by(parent_id=self.id, status='pending')
         return query.count() >= 1
 
-    def reschedule(self, session, occurrence):
+    def reschedule(self, session, occurrence=None):
         if self.status != 'active':
             return
+        if occurrence is None:
+            occurrence = current_timestamp()
 
         query = session.query(ScheduledTask).filter_by(status='pending', parent_id=self.id)
         if query.count() > 0:
@@ -475,7 +477,7 @@ class Event(Model):
     @classmethod
     def purge(cls, session, lifetime):
         delta = datetime.now(UTC) - timedelta(days=lifetime)
-        session.query(cls).filter(cls.status == 'completed', occurrence < delta).delete()
+        session.query(cls).filter(cls.status == 'completed', cls.occurrence < delta).delete()
 
     def schedule_tasks(self, session):
         description = self.describe()

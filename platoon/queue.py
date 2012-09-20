@@ -26,6 +26,7 @@ PURGE_ACTION = InternalAction(
 PURGE_TASK = RecurringTask(
     id='00000000-0000-0000-0000-000000000001',
     tag='purge-database',
+    schedule=PURGE_SCHEDULE,
     schedule_id=PURGE_SCHEDULE.id,
     action_id=PURGE_ACTION.id,
     retry_limit=0)
@@ -91,9 +92,11 @@ class TaskQueue(Component, Daemon):
             finally:
                 session.close()
 
-    def _startup(self):
+    def startup(self):
         session = self.schema.session
         session.merge(PURGE_SCHEDULE)
         session.merge(PURGE_ACTION)
         session.merge(PURGE_TASK)
+        session.flush()
+        PURGE_TASK.reschedule(session)
         session.commit()
