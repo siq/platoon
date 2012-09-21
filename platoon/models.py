@@ -70,6 +70,7 @@ class InternalAction(TaskAction):
     def _purge_database(self, session):
         platoon = get_unit('platoon.Platoon')
         Event.purge(session, platoon.configuration['completed_event_lifetime'])
+        ScheduledTask.purge(session, platoon.configuration['completed_task_lifetime'])
 
 class HttpRequestAction(TaskAction):
     """An http request action."""
@@ -299,6 +300,11 @@ class ScheduledTask(Task):
 
         if parent:
             parent.reschedule(session, self.occurrence)
+
+    @classmethod
+    def purge(cls, session, lifetime):
+        delta = current_timestamp() - timedelta(days=lifetime)
+        session.query(cls).filter(cls.status == 'completed', cls.occurrence < delta).delete()
 
     @classmethod
     def spawn(cls, template, occurrence=None, **params):

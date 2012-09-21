@@ -20,7 +20,8 @@ class APIServer(MeshServer):
 
 class Platoon(Component):
     configuration = Configuration({
-        'completed_event_lifetime': Integer(nonnull=True, default=10),
+        'completed_event_lifetime': Integer(nonnull=True, default=30),
+        'completed_task_lifetime': Integer(nonnull=True, default=30),
     })
 
     api = APIServer.deploy(bundles=[API], path='/')
