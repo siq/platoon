@@ -16,3 +16,6 @@ install -D -m 0644 platoonapi.yaml.install $BUILDPATH$SVCPATH/platoon/platoonapi
 
 interpolate svc/logrotate-platoonapi.conf logrotate-platoonapi.conf.install
 install -D -m 0644 logrotate-platoonapi.conf.install $BUILDPATH/etc/logrotate.d/siq-platoonapi
+
+interpolate svc/logrotate-platoon.conf logrotate-platoon.conf.install
+install -D -m 0644 logrotate-platoon.conf.install $BUILDPATH/etc/logrotate.d/siq-platoon

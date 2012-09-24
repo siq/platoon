@@ -17,9 +17,10 @@ logging:
     standard:
       (): spire.support.logs.LogFormatter
   handlers:
-    stream:
-      class: logging.StreamHandler
+    file:
+      class: logging.handlers.WatchedFileHandler
+      filename: ${LOGPATH}/platoon.log
       formatter: standard
   root:
     level: DEBUG
-    handlers: [stream]
+    handlers: [file]
