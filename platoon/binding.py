@@ -1,5 +1,5 @@
 class TaskSupport(object):
-    mixin = 'RecurringTask ScheduledTask'
+    mixin = 'RecurringTask ScheduledTask SubscribedTask'
 
     @staticmethod
     def prepare_http_task(task):
