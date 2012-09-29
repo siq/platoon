@@ -2,6 +2,7 @@ from datetime import datetime, time
 
 from scheme.timezone import UTC
 from spire.core import Component, Dependency
+from spire.runtime import onstartup
 from spire.schema import SchemaDependency
 from spire.support.daemon import Daemon
 from spire.support.logs import LogHelper
@@ -92,7 +93,8 @@ class TaskQueue(Component, Daemon):
             finally:
                 session.close()
 
-    def startup(self):
+    @onstartup()
+    def bootstrap_purge_task(self):
         session = self.schema.session
         session.merge(PURGE_SCHEDULE)
         session.merge(PURGE_ACTION)

@@ -10,6 +10,7 @@ configuration:
     hstore: true
     url: postgresql://postgres@localhost/platoon
 logging:
+  disable_existing_loggers: false
   formatters:
     standard:
       (): spire.support.logs.LogFormatter
