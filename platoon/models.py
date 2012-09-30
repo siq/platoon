@@ -501,3 +501,29 @@ def create_test_task(session, tag, delay=0, status='complete', result=None,
 
     session.add(task)
     session.commit()
+
+@schema.constructor()
+def bootstrap_purge_task(session):
+    schedule = Schedule(
+        id='00000000-0000-0000-0000-000000000001',
+        name='Purge Schedule',
+        schedule='fixed',
+        anchor=datetime(2000, 1, 1, 2, 0, 0, tzinfo=UTC),
+        interval=86400)
+    action = InternalAction(
+        id='00000000-0000-0000-0000-000000000001',
+        purpose='purge')
+    task = RecurringTask(
+        id='00000000-0000-0000-0000-000000000001',
+        tag='purge-database',
+        schedule=schedule,
+        schedule_id=schedule.id,
+        action_id=action.id,
+        retry_limit=0)
+
+    session.merge(schedule)
+    session.merge(action)
+    session.merge(task)
+    session.flush()
+    task.reschedule(session)
+    session.commit()

@@ -6,8 +6,9 @@ configuration:
   platoon.idler.Idler:
     timeout: 5
   schema:platoon:
-    admin_url: postgresql://postgres@locahost/postgres
+    admin_url: postgresql://postgres@localhost/postgres
     hstore: true
+    migrations: platoon:migrations
     url: postgresql://postgres@localhost/platoon
 logging:
   disable_existing_loggers: false

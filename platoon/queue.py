@@ -1,9 +1,7 @@
 from datetime import datetime, time
 
-from scheme.timezone import UTC
+from scheme import current_timestamp
 from spire.core import Component, Dependency
-from spire.runtime import onstartup
-from spire.schema import SchemaDependency
 from spire.support.daemon import Daemon
 from spire.support.logs import LogHelper
 from spire.support.threadpool import ThreadPool
@@ -12,25 +10,6 @@ from platoon.idler import Idler
 from platoon.models import Event, InternalAction, RecurringTask, ScheduledTask, Schedule
 
 log = LogHelper('platoon')
-
-PURGE_SCHEDULE = Schedule(
-    id='00000000-0000-0000-0000-000000000001',
-    name='Purge Schedule',
-    schedule='fixed',
-    anchor=datetime(2000, 1, 1, 2, 0, 0, tzinfo=UTC),
-    interval=86400)
-
-PURGE_ACTION = InternalAction(
-    id='00000000-0000-0000-0000-000000000001',
-    purpose='purge')
-
-PURGE_TASK = RecurringTask(
-    id='00000000-0000-0000-0000-000000000001',
-    tag='purge-database',
-    schedule=PURGE_SCHEDULE,
-    schedule_id=PURGE_SCHEDULE.id,
-    action_id=PURGE_ACTION.id,
-    retry_limit=0)
 
 class TaskPackage(object):
     def __init__(self, task, session):
@@ -56,7 +35,6 @@ class TaskQueue(Component, Daemon):
     """An asynchronous task queue."""
 
     idler = Dependency(Idler)
-    schema = SchemaDependency('platoon')
     threads = Dependency(ThreadPool)
 
     def run(self):
@@ -77,7 +55,7 @@ class TaskQueue(Component, Daemon):
                 else:
                     session.commit()
 
-                occurrence = datetime.now(UTC)
+                occurrence = current_timestamp()
                 tasks = list(pending_tasks.filter(ScheduledTask.occurrence <= occurrence))
 
                 if not tasks:
@@ -92,13 +70,3 @@ class TaskQueue(Component, Daemon):
                     threads.enqueue(package)
             finally:
                 session.close()
-
-    @onstartup()
-    def bootstrap_purge_task(self):
-        session = self.schema.session
-        session.merge(PURGE_SCHEDULE)
-        session.merge(PURGE_ACTION)
-        session.merge(PURGE_TASK)
-        session.flush()
-        PURGE_TASK.reschedule(session)
-        session.commit()
