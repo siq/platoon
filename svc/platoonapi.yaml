@@ -13,7 +13,7 @@ uwsgi:
   uid: platoon
   vacuum: true
 components:
-  - platoon.Platoon
+  - platoon.component.Platoon
 configuration:
   schema:platoon:
     admin_url: postgresql://postgres@localhost/postgres

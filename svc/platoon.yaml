@@ -3,7 +3,7 @@ daemon:
   pidfile: ${VARPATH}/platoon.pid
   uid: platoon
 components:
-  - platoon.TaskQueue
+  - platoon.queue.TaskQueue
 configuration:
   platoon.idler.Idler:
     timeout: 60
