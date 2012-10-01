@@ -1,7 +1,7 @@
 daemon:
   detached: false
 components:
-  - platoon.TaskQueue
+  - platoon.queue.TaskQueue
 configuration:
   platoon.idler.Idler:
     timeout: 5

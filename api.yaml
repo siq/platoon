@@ -5,7 +5,7 @@ uwsgi:
   module: spire.runtime.uwsgi
   processes: 4
 components:
-  - platoon.Platoon
+  - platoon.component.Platoon
 configuration:
   schema:platoon:
     admin_url: postgresql://postgres@localhost/postgres

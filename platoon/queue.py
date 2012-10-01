@@ -4,6 +4,7 @@ from scheme import current_timestamp
 from spire.core import Component, Dependency
 from spire.support.daemon import Daemon
 from spire.support.logs import LogHelper
+from spire.schema import SchemaDependency
 from spire.support.threadpool import ThreadPool
 
 from platoon.idler import Idler
@@ -35,6 +36,7 @@ class TaskQueue(Component, Daemon):
     """An asynchronous task queue."""
 
     idler = Dependency(Idler)
+    schema = SchemaDependency('platoon')
     threads = Dependency(ThreadPool)
 
     def run(self):
