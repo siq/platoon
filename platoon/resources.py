@@ -35,14 +35,17 @@ TaskStructure = Structure(
             'data': Text(),
             'headers': Map(Text(nonempty=True), nonnull=True),
             'timeout': Integer(nonnull=True, default=30),
-            'injections': Sequence(Text(nonempty=True), nonnull=True),
+            'injections': Sequence(Text(nonempty=True)),
+        },
+        'internal': {
+            'purpose': Enumeration('purge', nonempty=True),
         },
         'test': {
             'status': Enumeration('complete fail exception', nonempty=True),
             'result': Text(),
         }
     },
-    polymorphic_on=Enumeration('http-request test', name='type', nonempty=True),
+    polymorphic_on=Enumeration('http-request internal test', name='type', nonempty=True),
     nonnull=True)
 
 class Task(Resource):
