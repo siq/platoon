@@ -2,6 +2,7 @@ from spire.schema import *
 from spire.support.logs import LogHelper
 
 from platoon.constants import *
+from platoon.models.action import TaskAction
 from platoon.models.scheduledtask import ScheduledTask
 from platoon.models.task import Task
 

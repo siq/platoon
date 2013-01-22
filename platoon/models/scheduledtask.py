@@ -6,6 +6,8 @@ from spire.schema import *
 from spire.support.logs import LogHelper
 
 from platoon.constants import *
+from platoon.models.action import TaskAction
+from platoon.models.recurringtask import RecurringTask
 from platoon.models.task import *
 
 __all__ = ('ScheduledTask',)

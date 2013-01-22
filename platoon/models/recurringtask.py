@@ -5,7 +5,7 @@ from spire.schema import *
 from spire.support.logs import LogHelper
 
 from platoon.constants import *
-from platoon.models.scheduledtask import ScheduledTask
+from platoon.models.action import TaskAction
 from platoon.models.task import Task
 
 __all__ = ('RecurringTask',)
@@ -49,10 +49,12 @@ class RecurringTask(Task):
         return task
 
     def has_pending_task(self, session):
+        from platoon.models.scheduledtask import ScheduledTask
         query = session.query(ScheduledTask).filter_by(parent_id=self.id, status='pending')
         return query.count() >= 1
 
     def reschedule(self, session, occurrence=None):
+        from platoon.models.scheduledtask import ScheduledTask
         if self.status != 'active':
             return
         if occurrence is None:

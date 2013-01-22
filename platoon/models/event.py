@@ -5,6 +5,8 @@ from spire.schema import *
 from spire.support.logs import LogHelper
 from sqlalchemy.sql import bindparam, text
 
+from platoon.models.subscribedtask import SubscribedTask
+
 __all__ = ('Event',)
 
 log = LogHelper('platoon')
@@ -34,7 +36,6 @@ class Event(Model):
 
     def collate_tasks(self, session):
         model = SubscribedTask
-        print self.aspects
         return (session.query(model).with_lockmode('update')
             .filter(model.topic==self.topic)
             .filter((model.activation_limit == None) | (model.activations < model.activation_limit))
