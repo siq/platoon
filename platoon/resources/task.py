@@ -8,7 +8,7 @@ TaskStructure = Structure(
             'method': Text(nonempty=True),
             'mimetype': Text(),
             'data': Text(),
-            'headers': Map(Text(nonempty=True), nonnull=True),
+            'headers': Map(Text(nonempty=True)),
             'timeout': Integer(nonnull=True, default=30),
             'injections': Sequence(Text(nonempty=True)),
         },
@@ -36,3 +36,4 @@ class Task(Resource):
         task = TaskStructure.clone(required=True)
         completed = TaskStructure
         failed = TaskStructure
+        created = DateTime(utc=True, readonly=True)

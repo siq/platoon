@@ -12,7 +12,7 @@ class RecurringTaskController(TaskController, ModelController):
     version = (1, 0)
 
     model = RecurringTask
-    mapping = 'id tag description status schedule_id retry_backoff retry_limit retry_timeout'
+    mapping = 'id tag description status schedule_id retry_backoff retry_limit retry_timeout created'
 
     idler = Dependency(Idler)
     schema = SchemaDependency('platoon')

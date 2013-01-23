@@ -12,7 +12,8 @@ class SubscribedTaskController(TaskController, ModelController):
     version = (1, 0)
 
     model = SubscribedTask
-    mapping = 'id tag description topic aspects activation_limit retry_backoff retry_limit retry_timeout'
+    mapping = ('id tag description topic aspects activation_limit retry_backoff'
+        ' retry_limit retry_timeout created activated timeout')
 
     idler = Dependency(Idler)
     schema = SchemaDependency('platoon')

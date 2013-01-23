@@ -63,9 +63,14 @@ class InternalAction(TaskAction):
         return COMPLETED, None
 
     def _purge_database(self, session):
-        platoon = get_unit('platoon.Platoon')
+        from platoon.models import Event, ScheduledTask, SubscribedTask
+        platoon = get_unit('platoon.component.Platoon')
+
         Event.purge(session, platoon.configuration['completed_event_lifetime'])
         ScheduledTask.purge(session, platoon.configuration['completed_task_lifetime'])
+        SubscribedTask.purge(session, platoon.configuration['completed_task_lifetime'])
+
+        session.commit()
 
 class HttpRequestAction(TaskAction):
     """An http request action."""

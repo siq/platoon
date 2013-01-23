@@ -15,3 +15,5 @@ class SubscribedTask(Task):
         topic = Token(nonempty=True)
         aspects = Map(Text())
         activation_limit = Integer(minimum=1)
+        activated = DateTime(utc=True, readonly=True)
+        timeout = Integer()

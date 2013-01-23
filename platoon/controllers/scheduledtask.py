@@ -12,7 +12,7 @@ class ScheduledTaskController(TaskController, ModelController):
     version = (1, 0)
 
     model = ScheduledTask
-    mapping = 'id tag description status occurrence retry_backoff retry_limit retry_timeout'
+    mapping = 'id tag description status occurrence retry_backoff retry_limit retry_timeout created'
 
     idler = Dependency(Idler)
     schema = SchemaDependency('platoon')

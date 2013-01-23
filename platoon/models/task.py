@@ -1,3 +1,4 @@
+from scheme import current_timestamp
 from spire.schema import *
 from spire.support.logs import LogHelper
 
@@ -42,6 +43,7 @@ class Task(Model):
     action_id = ForeignKey('action.id', nullable=False, ondelete='CASCADE')
     failed_action_id = ForeignKey('action.id', ondelete='CASCADE')
     completed_action_id = ForeignKey('action.id', ondelete='CASCADE')
+    created = DateTime(timezone=True, nullable=False, default=current_timestamp)
 
     action = relationship(TaskAction, primaryjoin='TaskAction.id==Task.action_id',
         cascade='all')

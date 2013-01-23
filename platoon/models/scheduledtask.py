@@ -101,7 +101,8 @@ class ScheduledTask(Task):
     @classmethod
     def purge(cls, session, lifetime):
         delta = current_timestamp() - timedelta(days=lifetime)
-        session.query(cls).filter(cls.status == 'completed', cls.occurrence < delta).delete()
+        for task in session.query(cls).filter(cls.status=='completed', cls.occurrence < delta):
+            session.delete(task)
 
     @classmethod
     def spawn(cls, template, occurrence=None, **params):
