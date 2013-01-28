@@ -4,6 +4,8 @@ uwsgi:
   master: true
   module: spire.runtime.uwsgi
   processes: 4
+spire:
+  name: platoon
 components:
   - platoon.component.Platoon
 configuration:

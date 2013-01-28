@@ -6,6 +6,7 @@ from spire.schema import *
 from spire.support.logs import LogHelper
 
 from platoon.constants import *
+from platoon.queue import ThreadPackage
 from platoon.models.action import TaskAction
 from platoon.models.recurringtask import RecurringTask
 from platoon.models.task import *
@@ -97,6 +98,25 @@ class ScheduledTask(Task):
 
         if parent:
             parent.reschedule(session, self.occurrence)
+
+    @classmethod
+    def process_tasks(cls, schema, threads):
+        session = schema.session
+        occurrence = current_timestamp()
+
+        tasks = list(session.query(cls).with_lockmode('update').filter(
+            cls.status.in_(('pending', 'retrying')),
+            cls.occurrence <= occurrence))
+
+        if not tasks:
+            return
+        for task in tasks:
+            task.status = 'executing'
+
+        session.commit()
+        for task in tasks:
+            log('info', 'processing %s', repr(task))
+            threads.enqueue(ThreadPackage(schema.get_session(True), task, 'execute'))
 
     @classmethod
     def purge(cls, session, lifetime):

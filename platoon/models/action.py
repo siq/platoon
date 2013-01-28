@@ -1,6 +1,3 @@
-from httplib import HTTPConnection
-from urlparse import urlparse
-
 from scheme import UTC, current_timestamp
 from scheme import formats
 from spire.core import get_unit
@@ -8,6 +5,7 @@ from spire.schema import *
 from spire.support.logs import LogHelper
 
 from platoon.constants import *
+from platoon.support.http import http_request
 
 __all__ = ('HttpRequestAction', 'InternalAction', 'TaskAction', 'TestAction')
 
@@ -90,24 +88,10 @@ class HttpRequestAction(TaskAction):
     injections = Serialized()
 
     def execute(self, task, session):
-        scheme, host, path = urlparse(self.url)[:3]
-        connection = HTTPConnection(host=host, timeout=self.timeout)
-
         body = self._prepare_body(task, self.data)
-        if body and self.method == 'GET':
-            path = '%s?%s' % (path, body)
-            body = None
+        response = http_request(self.method, self.url, body,
+            self.mimetype, self.headers, self.timeout)
 
-        headers = self.headers or {}
-        if 'Content-Type' not in headers and self.mimetype:
-            headers['Content-Type'] = self.mimetype
-
-        try:
-            connection.request(self.method, path, body, headers)
-        except Exception:
-            raise
-
-        response = connection.getresponse()
         if response.status == PARTIAL:
             status = RETRY
         elif 200 <= response.status <= 299:
@@ -115,17 +99,7 @@ class HttpRequestAction(TaskAction):
         else:
             status = FAILED
 
-        return status, self._dump_http_response(response)
-
-    def _dump_http_response(self, response):
-        lines = ['%s %s' % (response.status, response.reason)]
-        for header, value in response.getheaders():
-            lines.append('%s: %s' % (header, value))
-
-        content = response.read()
-        if content:
-            lines.extend(['', content])
-        return '\n'.join(lines)
+        return status, response.dump()
 
     def _prepare_body(self, task, body):
         if self.mimetype != 'application/json':

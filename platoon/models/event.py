@@ -49,6 +49,13 @@ class Event(Model):
         return aspects
 
     @classmethod
+    def process_events(cls, session):
+        for event in session.query(cls).with_lockmode('update').filter_by(status='pending'):
+            event.schedule_tasks(session)
+        else:
+            session.commit()
+
+    @classmethod
     def purge(cls, session, lifetime):
         delta = datetime.now(UTC) - timedelta(days=lifetime)
         session.query(cls).filter(cls.status == 'completed', cls.occurrence < delta).delete()
