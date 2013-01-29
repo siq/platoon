@@ -20,7 +20,7 @@ class ThreadPackage(object):
 
     def __call__(self):
         session = self.session
-        model = session.merge(self.model)
+        model = session.merge(self.model, load=False)
 
         method = getattr(model, self.method)
         try:
@@ -38,8 +38,12 @@ class TaskQueue(Component, Daemon):
     schema = SchemaDependency('platoon')
     threads = Dependency(ThreadPool)
 
+    def enqueue(self, model, method, **params):
+        session = self.schema.get_session(True)
+        self.threads.enqueue(ThreadPackage(session, model, method, **params))
+
     def run(self):
-        from platoon.models import Event, Process, ScheduledTask
+        from platoon.models import Event, ScheduledTask
 
         idler = self.idler
         schema = self.schema
@@ -51,6 +55,5 @@ class TaskQueue(Component, Daemon):
             try:
                 Event.process_events(session)
                 ScheduledTask.process_tasks(schema, threads)
-                Process.process_processes(schema, threads)
             finally:
                 session.close()

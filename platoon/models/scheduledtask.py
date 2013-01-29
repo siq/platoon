@@ -100,10 +100,8 @@ class ScheduledTask(Task):
             parent.reschedule(session, self.occurrence)
 
     @classmethod
-    def process_tasks(cls, schema, threads):
-        session = schema.session
+    def process_tasks(cls, taskqueue, session):
         occurrence = current_timestamp()
-
         tasks = list(session.query(cls).with_lockmode('update').filter(
             cls.status.in_(('pending', 'retrying')),
             cls.occurrence <= occurrence))
@@ -116,7 +114,7 @@ class ScheduledTask(Task):
         session.commit()
         for task in tasks:
             log('info', 'processing %s', repr(task))
-            threads.enqueue(ThreadPackage(schema.get_session(True), task, 'execute'))
+            taskqueue.enqueue(task, 'execute')
 
     @classmethod
     def purge(cls, session, lifetime):

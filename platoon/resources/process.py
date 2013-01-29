@@ -14,13 +14,20 @@ class Process(Resource):
         queue_id = Token(nonempty=True, operators='equal')
         tag = Text(nonempty=True, operators='equal')
         timeout = Integer()
-        status = Enumeration('pending executing completed failed aborted',
+        status = Enumeration('pending initiating executing completed failed aborted',
             oncreate=False, operators='equal in')
         input = Field()
         output = Field()
         progress = Field()
         started = DateTime(utc=True, readonly=True)
         ended = DateTime(utc=True, readonly=True)
+
+    class update(Resource.update):
+        schema = {
+            'status': Enumeration('completed aborted'),
+            'output': Field(),
+            'progress': Field(),
+        }
 
 InitiationResponse = Structure({
     'status': Enumeration('executing completed failed', nonempty=True),
