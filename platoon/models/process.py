@@ -4,27 +4,16 @@ from mesh.exceptions import *
 from scheme import current_timestamp
 from spire.schema import *
 from spire.support.logs import LogHelper
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.orm.collections import attribute_mapped_collection
 
 from platoon.constants import *
 from platoon.queue import ThreadPackage
-from platoon.models.queue import Queue
+from platoon.models import ProcessAction, Queue, ScheduledTask
 from platoon.resources.process import InitiationResponse
 
 log = LogHelper('platoon')
 schema = Schema('platoon')
-
-class Request(Model):
-    """A process request."""
-
-    class meta:
-        schema = schema
-        tablename = 'request'
-
-    id = Identifier()
-    process_id = ForeignKey('process.id', nullable=False, ondelete='CASCADE')
-    occurrence = DateTime(timezone=True, nullable=False, default=current_timestamp)
-    type = Enumeration('executor-aborted queue-completed', nullable=False)
-    status = Enumeration('completed failed', nullable=False)
 
 class Process(Model):
     """A process."""
@@ -49,8 +38,8 @@ class Process(Model):
     executor_endpoint = relationship('ExecutorEndpoint',
         backref=backref('processes', lazy='dynamic'))
     queue = relationship(Queue, backref=backref('processes', lazy='dynamic'))
-    requests = relationship(Request, backref='process',
-        cascade='all,delete-orphan', passive_deletes=True)
+    tasks = association_proxy('process_tasks', 'task',
+        creator=lambda k, v: ProcessTask(phase=k, task=v))
 
     @property
     def endpoint(self):
@@ -97,12 +86,14 @@ class Process(Model):
         if output:
             self.output = output
 
-        payload = self._construct_payload(status='completed', output=self.output)
         try:
-            self.queue.endpoint.request(data)
-        except Exception, exception:
-            log('exception', 'queue notification on completion failed for %s', repr(self))
-            self.status = 'completing'
+            self._report_completion()
+        except Exception:
+            self.tasks['report-completion'] = ScheduledTask.create(session,
+                tag='report-completion:%s' % self.tag,
+                delta=120,
+                retry_backoff=1.4, retry_limit=10, retry_timeout=120,
+                action=ProcessAction(process=self, action='report-completion'))
 
     @classmethod
     def create(cls, session, queue_id, **attrs):
@@ -118,6 +109,7 @@ class Process(Model):
         if not process.executor_endpoint:
             raise OperationError(token='no-executor-available')
 
+        self._schedule_immediate_task(session, 'initiate-process')
         return process
 
     def initiate(self, session):
@@ -132,15 +124,11 @@ class Process(Model):
             response = InitiationResponse.process(self.endpoint.request(payload))
         except Exception, exception:
             log('exception', 'initiation of %s failed', repr(self))
-            return self._fail_process()
+            return # need to fail process here
 
         self.status = response['status']
         if self.status == 'completed':
             self.complete(session, response.get('output'), True)
-
-    @classmethod
-    def process_processes(cls, session, taskqueue):
-        pass
 
     def update(self, session, status=None, output=None, progress=None):
         session.refresh(self, lockmode='update')
@@ -163,12 +151,42 @@ class Process(Model):
         params.update(id=self.id, tag=self.tag)
         return params
 
-    def _fail_process(self):
-        self.status = 'failed'
+    def _report_abortion(self):
+        payload = self._construct_payload(status='aborted')
+        self.endpoint.request(payload)
 
-        data = {'id': self.id, 'tag': self.tag, 'status': self.status}
-        try:
-            self.queue.endpoint.request(data)
-        except Exception, exception:
-            log('exception', 'queue notification on failure failed for %s', repr(self))
+    def _report_completion(self):
+        payload = self._construct_payload(status='completed', output=self.output)
+        self.queue.endpoint.request(payload)
 
+    def _report_failure(self):
+        payload = self._construct_payload(status='failed')
+        self.queue.endpoint.request(payload)
+
+    def _report_timeout(self):
+        payload = self._construct_payload(status='timedout')
+        self.queue.endpoint.request(payload)
+
+    def _schedule_immediate_task(self, session, action):
+        self.tasks[action] = ScheduledTask.create(session,
+            tag='%s:%s' % (action, self.tag),
+            retry_limit=0,
+            action=ProcessAction(process_id=self.id, action=action))
+
+class ProcessTask(Model):
+    """A process task."""
+
+    class meta:
+        constraints = [UniqueConstraint('process_id', 'task_id', 'phase')]
+        schema = schema
+        tablename = 'process_task'
+
+    id = Identifier()
+    process_id = ForeignKey('process.id', nullable=False, ondelete='CASCADE')
+    task_id = ForeignKey('scheduled_task.id', nullable=False)
+    phase = Enumeration(PROCESS_TASK_ACTIONS, nullable=False)
+
+    process = relationship(Process, backref=backref('process_tasks',
+        collection_class=attribute_mapped_collection('phase'),
+        cascade='all,delete-orphan', passive_deletes=True))
+    task = relationship(ScheduledTask, cascade='all,delete-orphan', single_parent=True)

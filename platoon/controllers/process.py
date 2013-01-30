@@ -1,10 +1,8 @@
-from spire.core import Dependency
 from spire.mesh import ModelController
 from spire.schema import SchemaDependency
 
 from platoon import resources
 from platoon.models import *
-from platoon.queue import TaskQueue
 
 class ProcessController(ModelController):
     resource = resources.Process
@@ -12,8 +10,6 @@ class ProcessController(ModelController):
 
     mapping = 'id queue_id tag timeout input output progress started ended'
     model = Process
-
-    taskqueue = Dependency(TaskQueue)
     schema = SchemaDependency('platoon')
 
     def create(self, request, response, subject, data):
@@ -21,7 +17,6 @@ class ProcessController(ModelController):
         subject = self.model.create(session, **data)
         
         session.commit()
-        self.taskqueue.enqueue(subject, 'initiate')
         response({'id': subject.id})
 
     def update(self, request, response, subject, data):

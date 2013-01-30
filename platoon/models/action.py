@@ -21,7 +21,7 @@ class TaskAction(Model):
         tablename = 'action'
 
     id = Identifier()
-    type = Enumeration('http-request internal test', nullable=False)
+    type = Enumeration('http-request internal process test', nullable=False)
 
 class TestAction(TaskAction):
     """A test action."""
@@ -69,6 +69,29 @@ class InternalAction(TaskAction):
         SubscribedTask.purge(session, platoon.configuration['completed_task_lifetime'])
 
         session.commit()
+
+class ProcessAction(TaskAction):
+    """A process action."""
+
+    class meta:
+        polymorphic_identity = 'process'
+        schema = schema
+        tablename = 'process_action'
+
+    action_id = ForeignKey('action.id', nullable=False, primary_key=True, ondelete='CASCADE')
+    process_id = ForeignKey('process.id', nullable=False)
+    action = Enumeration(PROCESS_TASK_ACTIONS, nullable=False)
+
+    process = relationship('Process')
+
+    def execute(self, task, session):
+        action = self.action
+        if action == 'report-abortion':
+            self.process._report_abortion()
+        elif action == 'report-completion':
+            self.process._report_completion()
+        elif action == 'report-timeout':
+            self.process._report_timeout()
 
 class HttpRequestAction(TaskAction):
     """An http request action."""

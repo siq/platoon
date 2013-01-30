@@ -39,18 +39,33 @@ class ScheduledTask(Task):
     @classmethod
     def create(cls, session, tag, action, status='pending', occurrence=None,
             failed_action=None, completed_action=None, description=None,
-            retry_backoff=None, retry_limit=2, retry_timeout=300):
+            retry_backoff=None, retry_limit=2, retry_timeout=300, delta=None):
 
-        occurrence = occurrence or datetime.now(UTC)
+        if not occurrence:
+            occurrence = current_timestamp()
+            if delta:
+                occurrence += timedelta(seconds=delta)
+
         task = ScheduledTask(tag=tag, status=status, description=description,
             occurrence=occurrence, retry_backoff=retry_backoff,
             retry_limit=retry_limit, retry_timeout=retry_timeout)
 
-        task.action = TaskAction.polymorphic_create(action)
+        if isinstance(action, dict):
+            task.action = TaskAction.polymorphic_create(action)
+        else:
+            task.action = action
+
         if failed_action:
-            task.failed_action = TaskAction.polymorphic_create(failed_action)
+            if isinstance(failed_action, dict):
+                task.failed_action = TaskAction.polymorphic_create(failed_action)
+            else:
+                task.failed_action = failed_action
+
         if completed_action:
-            task.completed_action = TaskAction.polymorphic_create(completed_action)
+            if isinstance(completed_action, dict):
+                task.completed_action = TaskAction.polymorphic_create(completed_action)
+            else:
+                taks.completed_action = completed_action
 
         session.add(task)
         return task
