@@ -4,4 +4,6 @@ RETRY = 'retry'
 
 PARTIAL = 206
 
-PROCESS_TASK_PHASES = 'executor-aborted queue-completed queue-timedout'
+PROCESS_TASK_ACTIONS = ('initiate-process',
+    'report-abortion', 'report-completion', 'report-failure', 'report-progress',
+    'report-timeout-to-executor', 'report-timeout-to-queue')

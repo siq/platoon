@@ -8,7 +8,7 @@ class ProcessController(ModelController):
     resource = resources.Process
     version = (1, 0)
 
-    mapping = 'id queue_id tag timeout input output progress started ended'
+    mapping = 'id queue_id tag timeout status input output progress started ended'
     model = Process
     schema = SchemaDependency('platoon')
 
@@ -24,13 +24,7 @@ class ProcessController(ModelController):
             return response({'id': subject.id})
 
         session = self.schema.session
-        task = subject.update(session, **data)
+        subject.update(session, **data)
 
         session.commit()
-        if task:
-            self.taskqueue.enqueue(subject, task)
-
         response({'id': subject.id})
-
-    def _annotate_resource(self, request, model, resource, data):
-        resource['status'] = model.public_status

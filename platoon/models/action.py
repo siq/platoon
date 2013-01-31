@@ -85,13 +85,8 @@ class ProcessAction(TaskAction):
     process = relationship('Process')
 
     def execute(self, task, session):
-        action = self.action
-        if action == 'report-abortion':
-            self.process._report_abortion()
-        elif action == 'report-completion':
-            self.process._report_completion()
-        elif action == 'report-timeout':
-            self.process._report_timeout()
+        method = self.action.replace('-', '_')
+        getattr(self.process, method)(session)
 
 class HttpRequestAction(TaskAction):
     """An http request action."""
