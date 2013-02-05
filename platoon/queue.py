@@ -54,6 +54,6 @@ class TaskQueue(Component, Daemon):
             idler.idle()
             try:
                 Event.process_events(session)
-                ScheduledTask.process_tasks(schema, threads)
+                ScheduledTask.process_tasks(threads, session)
             finally:
                 session.close()
