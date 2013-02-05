@@ -9,7 +9,9 @@ from sqlalchemy.orm.collections import attribute_mapped_collection
 
 from platoon.constants import *
 from platoon.queue import ThreadPackage
-from platoon.models import ProcessAction, Queue, ScheduledTask
+from platoon.models.action import ProcessAction
+from platoon.models.queue import Queue
+from platoon.models.scheduledtask import ScheduledTask
 from platoon.resources.process import InitiationResponse
 
 log = LogHelper('platoon')
@@ -204,7 +206,7 @@ class ProcessTask(Model):
 
     id = Identifier()
     process_id = ForeignKey('process.id', nullable=False, ondelete='CASCADE')
-    task_id = ForeignKey('scheduled_task.id', nullable=False)
+    task_id = ForeignKey('scheduled_task.task_id', nullable=False)
     phase = Enumeration(PROCESS_TASK_ACTIONS, nullable=False)
 
     process = relationship(Process, backref=backref('process_tasks',

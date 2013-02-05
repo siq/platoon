@@ -7,7 +7,8 @@ from spire.support.logs import LogHelper
 from platoon.constants import *
 from platoon.support.http import http_request
 
-__all__ = ('HttpRequestAction', 'InternalAction', 'TaskAction', 'TestAction')
+__all__ = ('HttpRequestAction', 'InternalAction', 'TaskAction', 'TestAction',
+           'ProcessAction',)
 
 log = LogHelper('platoon')
 schema = Schema('platoon')
