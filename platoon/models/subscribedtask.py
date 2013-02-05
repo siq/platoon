@@ -73,5 +73,21 @@ class SubscribedTask(Task):
             if (task.created + timedelta(seconds=task.timeout)) < now:
                 session.delete(task)
 
+    def update(self, session, action=None, failed_action=None, completed_action=None, **params):
+        self.update_with_mapping(params)
+        if action:
+            self.action.update_with_mapping(action)
+
+        if failed_action:
+            if self.failed_action:
+                self.failed_action.update_with_mapping(failed_action)
+            else:
+                self.failed_action = TaskAction.polymorphic_create(failed_action)
+        if completed_action:
+            if self.completed_action:
+                self.completed_action.update_with_mapping(completed_action)
+            else:
+                self.completed_action = TaskAction.polymorphic_create(completed_action)
+
 SubscribedTaskAspectsIndex = Index('subscribed_task_aspects_idx', SubscribedTask.aspects,
     postgresql_using='gist')

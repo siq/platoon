@@ -43,8 +43,9 @@ class Event(Model):
             .params(aspects=(self.aspects or {})))
 
     def describe(self):
-        aspects = (self.aspects.copy() if self.aspects is not None else {})
-        aspects['topic'] = self.topic
+        aspects = {'topic': self.topic}
+        if self.aspects:
+            aspects.update(self.aspects)
         return aspects
 
     @classmethod

@@ -10,6 +10,7 @@ class SubscribedTask(Task):
 
     name = 'subscribedtask'
     version = 1
+    requests = 'create delete get put query update'
 
     class schema:
         topic = Token(nonempty=True)

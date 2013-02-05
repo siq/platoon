@@ -2,7 +2,7 @@ from httplib import HTTPConnection
 from urlparse import urlparse
 
 from scheme import UTC, current_timestamp
-from scheme.formats import Json
+from scheme import formats
 from spire.core import get_unit
 from spire.schema import *
 from spire.support.logs import LogHelper
@@ -135,9 +135,9 @@ class HttpRequestAction(TaskAction):
         if not (injections and params):
             return body
 
-        body = (Json.unserialize(body) if body else {})
+        body = (formats.Json.unserialize(body) if body else {})
         for key in injections:
             if key in params:
                 body[key] = params[key]
 
-        return Json.serialize(body)
+        return formats.Json.serialize(body)
