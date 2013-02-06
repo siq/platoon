@@ -98,7 +98,7 @@ class Process(Model):
         if not process.executor_endpoint:
             raise OperationError(token='no-executor-available')
 
-        self._schedule_task(session, 'initiate-process')
+        process._schedule_task(session, 'initiate-process')
         return process
 
     def fail(self, session, bypass_checks=False):
