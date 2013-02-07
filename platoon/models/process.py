@@ -119,9 +119,18 @@ class Process(Model):
         payload = self._construct_payload(input=self.input)
 
         try:
-            response = InitiationResponse.process(self.endpoint.request(payload))
+            status, response = self.endpoint.request(payload)
+            if status != COMPLETED:
+                log('error', 'initiation of %s failed during initial request\n%s', repr(self), response)
+                return self.fail(session, True)
         except Exception, exception:
-            log('exception', 'initiation of %s failed', repr(self))
+            log('exception', 'initiation of %s failed during initial request', repr(self))
+            return self.fail(session, True)
+
+        try:
+            response = InitiationResponse.process(response)
+        except Exception, exception:
+            log('exception', 'initiation of %s failed due to invalid response', repr(self))
             return self.fail(session, True)
 
         self.status = response['status']
@@ -136,27 +145,27 @@ class Process(Model):
 
     def report_abortion(self, session):
         payload = self._construct_payload(status='aborted')
-        self.endpoint.request(payload)
+        return self.endpoint.request(payload)
 
     def report_completion(self, session):
         payload = self._construct_payload(status='completed', output=self.output)
-        self.queue.endpoint.request(payload)
+        return self.queue.endpoint.request(payload)
 
     def report_failure(self, session):
         payload = self._construct_payload(status='failed')
-        self.queue.endpoint.request(payload)
+        return self.queue.endpoint.request(payload)
 
     def report_progress(self, session):
         payload = self._construct_payload(status='executing', progress=self.progress)
-        self.queue.endpoint.request(payload)
+        return self.queue.endpoint.request(payload)
 
     def report_timeout_to_executor(self, session):
         payload = self._construct_payload(status='timedout')
-        self.endpoint.request(payload)
+        return self.endpoint.request(payload)
 
     def report_timeout_to_queue(self, session):
         payload = self._construct_payload(status='timedout')
-        self.queue.endpoint.request(payload)
+        return self.queue.endpoint.request(payload)
 
     def update(self, session, status=None, output=None, progress=None):
         if status == 'aborted':
@@ -175,8 +184,18 @@ class Process(Model):
 
         payload = self._construct_payload(status='executing')
         try:
-            response = InitiationResponse.process(self.endpoint.request(payload))
+            status, response = self.endpoint.request(payload)
+            if status != COMPLETED:
+                log('error', 'verification of %s failed during initial request\n%s', repr(self), response)
+                return self.fail(session, True)
         except Exception:
+            log('exception', 'verification of %s failed during initial request', repr(self))
+            return self.fail(session, True)
+
+        try:
+            response = InitiationResponse.process(response)
+        except Exception:
+            log('exception', 'verification of %s failed due to invalid response', repr(self))
             return self.fail(session, True)
 
         self.communicated = current_timestamp()
