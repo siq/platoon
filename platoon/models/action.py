@@ -88,6 +88,8 @@ class ProcessAction(TaskAction):
     def execute(self, task, session):
         method = self.action.replace('-', '_')
         getattr(self.process, method)(session)
+        # FIXME: place holder to satisfy caller
+        return 'completed', {}
 
 class HttpRequestAction(TaskAction):
     """An http request action."""
