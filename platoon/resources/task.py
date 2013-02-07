@@ -1,5 +1,6 @@
 from mesh.standard import *
 from scheme import *
+from platoon.constants import *
 
 TaskStructure = Structure(
     structure={
@@ -18,9 +19,13 @@ TaskStructure = Structure(
         'test': {
             'status': Enumeration('complete fail exception', nonempty=True),
             'result': Text(),
+        },
+        'process': {
+            'action': Enumeration(list(PROCESS_TASK_ACTIONS), nonempty=True),
+            'process_id': UUID(nonempty=True),
         }
     },
-    polymorphic_on=Enumeration('http-request internal test', name='type', nonempty=True),
+    polymorphic_on=Enumeration('http-request internal test process', name='type', nonempty=True),
     nonnull=True)
 
 class Task(Resource):

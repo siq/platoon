@@ -134,27 +134,27 @@ class Process(Model):
         query = session.query(cls).with_lockmode('update').filter(
             cls.timeout != None, (cls.started + cls.timeout) < occurrence)
 
-    def report_abortion(self):
+    def report_abortion(self, session):
         payload = self._construct_payload(status='aborted')
         self.endpoint.request(payload)
 
-    def report_completion(self):
+    def report_completion(self, session):
         payload = self._construct_payload(status='completed', output=self.output)
         self.queue.endpoint.request(payload)
 
-    def report_failure(self):
+    def report_failure(self, session):
         payload = self._construct_payload(status='failed')
         self.queue.endpoint.request(payload)
 
-    def report_progress(self):
+    def report_progress(self, session):
         payload = self._construct_payload(status='executing', progress=self.progress)
         self.queue.endpoint.request(payload)
 
-    def report_timeout_to_executor(self):
+    def report_timeout_to_executor(self, session):
         payload = self._construct_payload(status='timedout')
         self.endpoint.request(payload)
 
-    def report_timeout_to_queue(self):
+    def report_timeout_to_queue(self, session):
         payload = self._construct_payload(status='timedout')
         self.queue.endpoint.request(payload)
 
