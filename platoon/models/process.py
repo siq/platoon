@@ -140,8 +140,11 @@ class Process(Model):
     @classmethod
     def process_processes(cls, taskqueue, session):
         occurrence = current_timestamp()
-        query = session.query(cls).with_lockmode('update').filter(
-            cls.timeout != None, (cls.started + cls.timeout) < occurrence)
+        query = session.query(cls).filter(cls.timeout != None,
+            (cls.started + cls.timeout) < occurrence)
+
+        for process in query:
+            taskqueue.enqueue(process, 'abandon')
 
     def report_abortion(self, session):
         payload = self._construct_payload(status='aborted')

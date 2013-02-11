@@ -43,7 +43,7 @@ class TaskQueue(Component, Daemon):
         self.threads.enqueue(ThreadPackage(session, model, method, **params))
 
     def run(self):
-        from platoon.models import Event, ScheduledTask
+        from platoon.models import Event, Process, ScheduledTask
 
         idler = self.idler
         schema = self.schema
@@ -54,6 +54,7 @@ class TaskQueue(Component, Daemon):
             idler.idle()
             try:
                 Event.process_events(session)
+                Process.process_processes(self, session)
                 ScheduledTask.process_tasks(self, session)
             finally:
                 session.close()
