@@ -141,12 +141,11 @@ class Process(Model):
     @classmethod
     def process_processes(cls, taskqueue, session):
         occurrence = current_timestamp()
-        delta = timedelta(minutes=process.timeout)
         query = session.query(cls).filter(cls.timeout != None,
             cls.started != None, cls.status == 'executing')
 
         for process in query:
-            if (process.started + delta) < occurrence:
+            if (process.started + timedelta(minutes=process.timeout)) < occurrence:
                 taskqueue.enqueue(process, 'abandon')
 
     def report_abortion(self, session):
