@@ -10,7 +10,7 @@ class Process(Resource):
     version = 1
 
     class schema:
-        id = UUID(nonempty=True, operators='equal')
+        id = UUID(nonnull=True, oncreate=True, operators='equal')
         queue_id = Token(nonempty=True, operators='equal')
         tag = Text(nonempty=True, operators='equal')
         timeout = Integer()

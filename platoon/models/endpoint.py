@@ -34,7 +34,9 @@ class HttpEndpoint(Endpoint):
     info = Json()
 
     def request(self, data, timeout=None):
-        data['info'] = self.info
+        if self.info:
+            data['info'] = self.info
+
         response = http_request(self.method, self.url, data, self.mimetype,
             self.headers, timeout, True)
 
