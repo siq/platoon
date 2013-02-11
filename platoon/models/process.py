@@ -1,3 +1,4 @@
+from datetime import timedelta
 from traceback import format_exc
 
 from mesh.exceptions import *
@@ -140,11 +141,13 @@ class Process(Model):
     @classmethod
     def process_processes(cls, taskqueue, session):
         occurrence = current_timestamp()
+        delta = timedelta(minutes=process.timeout)
         query = session.query(cls).filter(cls.timeout != None,
-            (cls.started + cls.timeout) < occurrence)
+            cls.started != None, cls.status == 'executing')
 
         for process in query:
-            taskqueue.enqueue(process, 'abandon')
+            if (process.started + delta) < occurrence:
+                taskqueue.enqueue(process, 'abandon')
 
     def report_abortion(self, session):
         payload = self._construct_payload(status='aborted')
