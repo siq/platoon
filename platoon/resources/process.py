@@ -19,6 +19,7 @@ class Process(Resource):
         input = Field()
         output = Field()
         progress = Field()
+        state = Field()
         started = DateTime(utc=True, readonly=True)
         ended = DateTime(utc=True, readonly=True)
 
@@ -33,4 +34,5 @@ InitiationResponse = Structure({
     'status': Enumeration('executing completed failed', nonempty=True),
     'progress': Field(),
     'output': Field(),
+    'state': Field(),
 }, nonnull=True)

@@ -35,6 +35,7 @@ class Process(Model):
     input = Json()
     output = Json()
     progress = Json()
+    state = Json()
     started = DateTime(timezone=True)
     ended = DateTime(timezone=True)
     communicated = DateTime(timezone=True)
@@ -137,6 +138,11 @@ class Process(Model):
         self.status = response['status']
         if self.status == 'completed':
             self.complete(session, response.get('output'), True)
+            return
+
+        state = response.get('state')
+        if state:
+            self.state = state
 
     @classmethod
     def process_processes(cls, taskqueue, session):
@@ -149,7 +155,7 @@ class Process(Model):
                 taskqueue.enqueue(process, 'abandon')
 
     def report_abortion(self, session):
-        payload = self._construct_payload(status='aborted')
+        payload = self._construct_payload(status='aborted', for_executor=True)
         return self.endpoint.request(payload)
 
     def report_completion(self, session):
@@ -165,20 +171,22 @@ class Process(Model):
         return self.queue.endpoint.request(payload)
 
     def report_timeout_to_executor(self, session):
-        payload = self._construct_payload(status='timedout')
+        payload = self._construct_payload(status='timedout', for_executor=True)
         return self.endpoint.request(payload)
 
     def report_timeout_to_queue(self, session):
         payload = self._construct_payload(status='timedout')
         return self.queue.endpoint.request(payload)
 
-    def update(self, session, status=None, output=None, progress=None):
+    def update(self, session, status=None, output=None, progress=None, state=None):
         if status == 'aborted':
             self.abort(session)
         elif status == 'completed':
             self.complete(session, output)
         elif progress:
             self.progress = progress
+            if state:
+                self.state = state
             self._schedule_task(session, 'report-progress', limit=3)
 
     def verify(self, session, bypass_checks=False):
@@ -187,7 +195,7 @@ class Process(Model):
             if self.status != 'executing':
                 return
 
-        payload = self._construct_payload(status='executing')
+        payload = self._construct_payload(status='executing', for_executor=True)
         try:
             status, response = self.endpoint.request(payload)
             if status != COMPLETED:
@@ -207,8 +215,14 @@ class Process(Model):
         if response['status'] == 'completed':
             return self.complete(session, response.get('output'), True)
 
-    def _construct_payload(self, **params):
+        state = response.get('state')
+        if state:
+            self.state = state
+
+    def _construct_payload(self, for_executor=False, **params):
         params.update(id=self.id, tag=self.tag, subject=self.queue.subject)
+        if for_executor:
+            params['state'] = self.state
         return params
 
     def _schedule_task(self, session, action, delta=None, limit=0, timeout=120, backoff=1.4):

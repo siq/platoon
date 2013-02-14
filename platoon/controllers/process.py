@@ -8,7 +8,7 @@ class ProcessController(ModelController):
     resource = resources.Process
     version = (1, 0)
 
-    mapping = 'id queue_id tag timeout status input output progress started ended'
+    mapping = 'id queue_id tag timeout status input output progress state started ended'
     model = Process
     schema = SchemaDependency('platoon')
 
