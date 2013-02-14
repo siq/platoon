@@ -118,7 +118,7 @@ class Process(Model):
             return
 
         self.started = current_timestamp()
-        payload = self._construct_payload(input=self.input)
+        payload = self._construct_payload(status='initiating', input=self.input)
 
         try:
             status, response = self.endpoint.request(payload)
