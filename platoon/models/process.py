@@ -208,7 +208,7 @@ class Process(Model):
             return self.complete(session, response.get('output'), True)
 
     def _construct_payload(self, **params):
-        params.update(id=self.id, tag=self.tag)
+        params.update(id=self.id, tag=self.tag, subject=self.queue.subject)
         return params
 
     def _schedule_task(self, session, action, delta=None, limit=0, timeout=120, backoff=1.4):
