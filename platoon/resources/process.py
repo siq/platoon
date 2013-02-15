@@ -17,8 +17,8 @@ class Process(Resource):
         status = Enumeration('pending initiating executing completed failed aborted',
             oncreate=False, operators='equal in')
         input = Field()
-        output = Field()
-        progress = Field()
+        output = Field(oncreate=False)
+        progress = Field(oncreate=False)
         state = Field(oncreate=False)
         started = DateTime(utc=True, readonly=True)
         ended = DateTime(utc=True, readonly=True)

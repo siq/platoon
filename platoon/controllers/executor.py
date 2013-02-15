@@ -19,6 +19,16 @@ class ExecutorController(ModelController):
         session.commit()
         response({'id': subject.id})
 
+    def update(self, request, response, subject, data):
+        if not data:
+            return response({'id': subject.id})
+
+        session = self.schema.session
+        subject.update(session, **data)
+
+        session.commit()
+        response({'id': subject.id})
+
     def _annotate_resource(self, request, model, resource, data):
         endpoints = model.endpoints
         if endpoints:

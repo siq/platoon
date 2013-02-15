@@ -32,8 +32,19 @@ class Executor(Model):
         session.add(executor)
         return executor
 
-    def update(self, session, **attrs):
-        pass
+    def update(self, session, endpoints=None, **attrs):
+        if attrs:
+            self.update_with_mapping(attrs, ignore='id')
+        if endpoints is not None:
+            collection = self.endpoints
+            for subject, endpoint in endpoints.iteritems():
+                if subject in collection:
+                    collection[subject].update_with_mapping(endpoint)
+                else:
+                    collection[subject] = Endpoint.polymorphic_create(endpoint)
+            for subject in collection.keys():
+                if subject not in endpoints:
+                    del collection[subject]
 
 class ExecutorEndpoint(Model):
     """An executor endpoint."""
