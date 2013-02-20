@@ -30,7 +30,7 @@ class Process(Model):
     executor_endpoint_id = ForeignKey('executor_endpoint.id')
     tag = Text(nullable=False)
     timeout = Integer()
-    status = Enumeration('pending executing aborted completed failed timedout',
+    status = Enumeration('pending initiating executing aborted completed failed timedout',
         nullable=False, default='pending')
     input = Json()
     output = Json()

@@ -14,7 +14,7 @@ class Process(Resource):
         queue_id = Token(nonempty=True, operators='equal')
         tag = Text(nonempty=True, operators='equal')
         timeout = Integer()
-        status = Enumeration('pending initiating executing completed failed aborted',
+        status = Enumeration('pending initiating executing completed failed aborted timedout',
             oncreate=False, operators='equal in')
         input = Field()
         output = Field(oncreate=False)
