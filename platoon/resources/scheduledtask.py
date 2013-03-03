@@ -22,3 +22,9 @@ class ScheduledTask(Task):
             'completed': DateTime(utc=True),
             'result': Text(),
         }), nonnull=True, deferred=True, readonly=True)
+
+    class create(Resource.create):
+        fields = {
+            'delta': Integer(nonnull=True, minimum=0),
+        }
+
