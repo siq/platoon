@@ -12,6 +12,10 @@ uwsgi:
   touch-logreopen: ${VARPATH}/platoonapi.logreopen
   uid: platoon
   vacuum: true
+spire:
+  registration_url: http://localhost:10000/nucleus/1.0/service
+  services:
+    - id: platoon
 components:
   - platoon.component.Platoon
 configuration:
