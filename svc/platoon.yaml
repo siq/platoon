@@ -2,6 +2,10 @@ daemon:
   gid: platoon
   pidfile: ${VARPATH}/platoon.pid
   uid: platoon
+spire:
+  registration_url: http://localhost:10000/nucleus/1.0/service
+  services:
+    - id: platoon
 components:
   - platoon.queue.TaskQueue
 configuration:
