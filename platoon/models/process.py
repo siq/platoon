@@ -140,6 +140,10 @@ class Process(Model):
             self.complete(session, response.get('output'), True)
             return
 
+        if self.status == 'failed':
+            self.fail(session, True)
+            return
+
         state = response.get('state')
         if state:
             self.state = state
