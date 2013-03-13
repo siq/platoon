@@ -6,7 +6,7 @@ components:
   - platoon.queue.TaskQueue
 configuration:
   platoon.idler.Idler:
-    timeout: 60
+    timeout: 20
   schema:platoon:
     admin_url: postgresql://postgres@localhost/postgres
     hstore: true
