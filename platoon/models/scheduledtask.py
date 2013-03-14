@@ -36,6 +36,9 @@ class ScheduledTask(Task):
     executions = relationship(TaskExecution, backref='task', order_by='TaskExecution.attempt',
         cascade='all,delete-orphan', passive_deletes=True)
 
+    def __repr__(self):
+        return 'ScheduledTask(id=%r, tag=%r)' % (self.id, self.tag)
+
     @classmethod
     def create(cls, session, tag, action, status='pending', occurrence=None,
             failed_action=None, completed_action=None, description=None,
