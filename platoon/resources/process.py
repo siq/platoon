@@ -25,7 +25,7 @@ class Process(Resource):
 
     class update(Resource.update):
         schema = {
-            'status': Enumeration('completed aborted'),
+            'status': Enumeration('aborted completed failed'),
             'output': Field(),
             'progress': Field(),
             'state': Field(),
