@@ -75,16 +75,16 @@ class Process(Model):
         self.status = 'aborted'
         self._schedule_task(session, 'report-abortion', limit=10)
 
-    def complete(self, session, output=None, bypass_checks=False):
+    def end(self, session, status='completed', output=None, bypass_checks=False):
         if not bypass_checks:
             session.refresh(self, lockmode='update')
             if self.status != 'executing':
                 return
 
-        self.status = 'completed'
-        self.completed = current_timestamp()
+        self.ended = current_timestamp()
+        self.status = status
         self.output = output
-        self._schedule_task(session, 'report-completion', limit=10)
+        self._schedule_task(session, 'report-end', limit=10)
 
     @classmethod
     def create(cls, session, queue_id, **attrs):
@@ -103,15 +103,6 @@ class Process(Model):
         process._schedule_task(session, 'initiate-process')
         return process
 
-    def fail(self, session, bypass_checks=False):
-        if not bypass_checks:
-            session.refresh(self, lockmode='update')
-            if self.status != 'executing':
-                return
-
-        self.status = 'failed'
-        self._schedule_task(session, 'report-failure', limit=10)
-
     def initiate_process(self, session):
         session.refresh(self, lockmode='update')
         if self.status != 'pending':
@@ -124,25 +115,20 @@ class Process(Model):
             status, response = self.endpoint.request(payload)
             if status != COMPLETED:
                 log('error', 'initiation of %s failed during initial request\n%s', repr(self), response)
-                return self.fail(session, True)
+                return self.end(session, 'failed', bypass_checks=True)
         except Exception, exception:
             log('exception', 'initiation of %s failed during initial request', repr(self))
-            return self.fail(session, True)
+            return self.end(session, 'failed', bypass_checks=True)
 
         try:
             response = InitiationResponse.process(response)
         except Exception, exception:
             log('exception', 'initiation of %s failed due to invalid response', repr(self))
-            return self.fail(session, True)
+            return self.end(session, 'failed', bypass_checks=True)
 
         self.status = response['status']
-        if self.status == 'completed':
-            self.complete(session, response.get('output'), True)
-            return
-
-        if self.status == 'failed':
-            self.fail(session, True)
-            return
+        if self.status in ('completed', 'failed'):
+            return self.end(session, self.status, response.get('output'), True)
 
         state = response.get('state')
         if state:
@@ -162,12 +148,8 @@ class Process(Model):
         payload = self._construct_payload(status='aborted', for_executor=True)
         return self.endpoint.request(payload)
 
-    def report_completion(self, session):
-        payload = self._construct_payload(status='completed', output=self.output)
-        return self.queue.endpoint.request(payload)
-
-    def report_failure(self, session):
-        payload = self._construct_payload(status='failed')
+    def report_end(self, session):
+        payload = self._construct_payload(status=self.status, output=self.output)
         return self.queue.endpoint.request(payload)
 
     def report_progress(self, session):
@@ -185,8 +167,8 @@ class Process(Model):
     def update(self, session, status=None, output=None, progress=None, state=None):
         if status == 'aborted':
             self.abort(session)
-        elif status == 'completed':
-            self.complete(session, output)
+        elif status in ('completed', 'failed'):
+            self.end(session, status, output)
         elif progress:
             self.progress = progress
             if state:
@@ -204,20 +186,21 @@ class Process(Model):
             status, response = self.endpoint.request(payload)
             if status != COMPLETED:
                 log('error', 'verification of %s failed during initial request\n%s', repr(self), response)
-                return self.fail(session, True)
+                return self.end(session, 'failed', bypass_checks=True)
         except Exception:
             log('exception', 'verification of %s failed during initial request', repr(self))
-            return self.fail(session, True)
+            return self.end(session, 'failed', bypass_checks=True)
 
+        self.communicated = current_timestamp()
         try:
             response = InitiationResponse.process(response)
         except Exception:
             log('exception', 'verification of %s failed due to invalid response', repr(self))
-            return self.fail(session, True)
+            return self.end(session, 'failed', bypass_checks=True)
 
-        self.communicated = current_timestamp()
-        if response['status'] == 'completed':
-            return self.complete(session, response.get('output'), True)
+        status = response['status']
+        if status in ('completed', 'failed'):
+            return self.end(session, status, response.get('output'), True)
 
         state = response.get('state')
         if state:
