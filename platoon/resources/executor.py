@@ -7,7 +7,7 @@ Endpoint = Structure(
             'url': Text(nonempty=True),
             'method': Text(nonnull=True, default='POST'),
             'mimetype': Text(nonnull=True, default='application/json'),
-            'headers': Map(Text(nonempty=True), nonnull=True),
+            'headers': Map(Text(nonempty=True)),
             'info': Field(),
         }
     },
