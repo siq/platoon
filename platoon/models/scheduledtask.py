@@ -141,6 +141,15 @@ class ScheduledTask(Task):
             session.delete(task)
 
     @classmethod
+    def retry_executing_tasks(cls, session):
+        tasks = session.query(cls).with_lockmode('update').filter(cls.status=='executing')
+        for task in tasks:
+            log('info', 'recovering %s', repr(task))
+            task._retry_or_fail()
+        else:
+            session.commit()
+
+    @classmethod
     def spawn(cls, template, occurrence=None, **params):
         occurrence = occurrence or datetime.now(UTC)
         return cls(tag=template.tag, status='pending', description=template.description,
@@ -152,8 +161,17 @@ class ScheduledTask(Task):
     def update(self, session, data):
         raise NotImplemented()
 
-    def _calculate_retry(self, execution):
+    def _calculate_retry(self, execution=None):
         timeout = self.retry_timeout
-        if self.retry_backoff is not None:
+        if execution and self.retry_backoff is not None:
             timeout *= (self.retry_backoff ** execution.attempt)
         return datetime.now(UTC) + timedelta(seconds=timeout)
+
+    def _retry_or_fail(self):
+        attempts = len(self.executions)
+        if attempts >= self.retry_limit:
+            self.status = 'failed'
+            log('error', '%s marked as failed', repr(self))
+        else:
+            self.status = 'retrying'
+            self.occurrence = self._calculate_retry()

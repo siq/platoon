@@ -50,6 +50,8 @@ class TaskQueue(Component, Daemon):
         session = schema.session
         threads = self.threads
 
+        ScheduledTask.retry_executing_tasks(session)
+
         while True:
             idler.idle()
             try:
