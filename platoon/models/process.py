@@ -142,6 +142,7 @@ class Process(Model):
 
         for process in query:
             if (process.started + timedelta(minutes=process.timeout)) < occurrence:
+                log('info', 'abandoning %r due to timing out', process)
                 taskqueue.enqueue(process, 'abandon')
 
     def report_abortion(self, session):
