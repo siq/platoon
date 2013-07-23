@@ -51,12 +51,14 @@ class TaskQueue(Component, Daemon):
         threads = self.threads
 
         ScheduledTask.retry_executing_tasks(session)
-
-        while True:
-            idler.idle()
-            try:
-                Event.process_events(session)
-                Process.process_processes(self, session)
-                ScheduledTask.process_tasks(self, session)
-            finally:
-                session.close()
+        try:
+            while True:
+                idler.idle()
+                try:
+                    Event.process_events(session)
+                    Process.process_processes(self, session)
+                    ScheduledTask.process_tasks(self, session)
+                finally:
+                    session.close()
+        except Exception:
+            log('exception', 'exception raised by task queue')

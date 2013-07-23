@@ -145,7 +145,7 @@ class ScheduledTask(Task):
         tasks = session.query(cls).with_lockmode('update').filter(cls.status=='executing')
         for task in tasks:
             log('info', 'recovering %s', repr(task))
-            task._retry_or_fail()
+            task._retry_or_fail(session)
         else:
             session.commit()
 
@@ -167,11 +167,16 @@ class ScheduledTask(Task):
             timeout *= (self.retry_backoff ** execution.attempt)
         return datetime.now(UTC) + timedelta(seconds=timeout)
 
-    def _retry_or_fail(self):
+    def _retry_or_fail(self, session):
         attempts = len(self.executions)
-        if attempts >= self.retry_limit:
-            self.status = 'failed'
-            log('error', '%s marked as failed', repr(self))
-        else:
+        if attempts < self.retry_limit:
             self.status = 'retrying'
             self.occurrence = self._calculate_retry()
+            return
+
+        self.status = 'failed'
+        if self.parent_id:
+            parent = RecurringTask.load(session, id=self.parent_id, lockmode='update')
+            parent.reschedule(session)
+
+        log('error', '%s marked as failed', repr(self))

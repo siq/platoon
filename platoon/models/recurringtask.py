@@ -57,12 +57,13 @@ class RecurringTask(Task):
         from platoon.models.scheduledtask import ScheduledTask
         if self.status != 'active':
             return
-        if occurrence is None:
-            occurrence = current_timestamp()
 
         query = session.query(ScheduledTask).filter_by(status='pending', parent_id=self.id)
         if query.count() > 0:
             return
+
+        if occurrence is None:
+            occurrence = current_timestamp()
 
         occurrence = self.schedule.next(occurrence)
         task = ScheduledTask.spawn(self, occurrence, parent_id=self.id)
