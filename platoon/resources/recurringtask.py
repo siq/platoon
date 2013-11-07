@@ -14,4 +14,4 @@ class RecurringTask(Task):
 
     class schema:
         status = Enumeration('active inactive', nonnull=True, default='active')
-        schedule_id = UUID(nonempty=True)
+        schedule_id = UUID(nonempty=True, operators='equal')
