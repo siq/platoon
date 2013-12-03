@@ -123,7 +123,7 @@ class MonthlySchedule(Schedule):
         elif self.strategy == 'weekday':
             parts.append('%s' % describe_weekday_step(anchor))
 
-        time = anchor.strftime('%I:%M %p')
+        time = anchor.strftime('%Y-%m-%d %I:%M %p')
         if time[0] == '0':
             time = time[1:]
 
@@ -183,7 +183,7 @@ class WeeklySchedule(Schedule):
         else:
             parts.append(', '.join(weekdays))
 
-        time = self.anchor.strftime('%I:%M %p')
+        time = self.anchor.strftime('%Y-%m-%d %I:%M %p')
         if time[0] == '0':
             time = time[1:]
 
