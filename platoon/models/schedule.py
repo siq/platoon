@@ -113,22 +113,22 @@ class MonthlySchedule(Schedule):
     def describe(self):
         parts = []
         if self.interval == 1:
-            parts.append('Monthly on')
+            parts.append('Monthly')
         else:
-            parts.append('Every %d months on' % self.interval)
+            parts.append('Every %d months' % self.interval)
 
         anchor = self.anchor
         if self.strategy == 'day':
             parts.append('day %d' % anchor.day)
         elif self.strategy == 'weekday':
-            parts.append('the %s' % describe_weekday_step(anchor))
+            parts.append('%s' % describe_weekday_step(anchor))
 
         time = anchor.strftime('%I:%M %p')
         if time[0] == '0':
             time = time[1:]
 
-        parts.append('at %s' % time)
-        return ' '.join(parts)
+        parts.append('%s' % time)
+        return ' / '.join(parts)
 
     def _next_occurrence(self, occurrence):
         anchor = self.anchor
@@ -169,9 +169,9 @@ class WeeklySchedule(Schedule):
     def describe(self):
         parts = []
         if self.interval == 1:
-            parts.append('Weekly on')
+            parts.append('Weekly')
         else:
-            parts.append('Every %d weeks on' % self.interval)
+            parts.append('Every %d weeks' % self.interval)
 
         weekdays = []
         for name in self.names:
@@ -187,8 +187,8 @@ class WeeklySchedule(Schedule):
         if time[0] == '0':
             time = time[1:]
 
-        parts.append('at %s' % time)
-        return ' '.join(parts)
+        parts.append('%s' % time)
+        return ' / '.join(parts)
 
     def _next_occurrence(self, occurrence):
         anchor = self.anchor
