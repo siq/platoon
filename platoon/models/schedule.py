@@ -193,7 +193,7 @@ class WeeklySchedule(Schedule):
     def _next_occurrence(self, occurrence):
         anchor = self.anchor
         if occurrence < anchor:
-            return anchor
+            occurrence = anchor
 
         weekdays = []
         for i, token in enumerate(self.tokens):
