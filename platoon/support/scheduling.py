@@ -1,3 +1,4 @@
+from scheme.timezone import current_timestamp
 from datetime import datetime, timedelta, time
 
 QUANTITIES = {
@@ -121,7 +122,7 @@ class Specification(object):
 
     def next(self, occurrence=None):
         if not occurrence:
-            occurrence = datetime.now()
+            occurrence = current_timestamp()
 
         occurrence = occurrence.replace(second=0, microsecond=0)
         if self._check_date(occurrence):
@@ -138,25 +139,36 @@ class Specification(object):
                     return candidate
 
     def next_monthly_interval(self, interval, occurrence=None):
+        now = current_timestamp()
         if not occurrence:
-            occurrence = datetime.now()
+            occurrence = now
 
         candidate = occurrence.replace(day=1, hour=0, minute=0)
-        for _ in range(interval):
-            if candidate.month == 12:
-                candidate = candidate.replace(candidate.year + 1, 1, candidate.day)
-            else:
-                candidate = candidate.replace(candidate.year, candidate.month + 1, candidate.day)
+        now_month = now.replace(day=1, hour=1, minute=0)
+        while candidate < now_month:
+            candidate = advance_by_month(candidate, interval)
 
-        return self.next(candidate)
+        next = self.next(candidate)
+        if next < now:
+            next = self.next(advance_by_month(candidate, interval))
+        return next
 
     def next_weekly_interval(self, interval, occurrence=None):
+        now = current_timestamp()
         if not occurrence:
-            occurrence = datetime.now()
+            occurrence = now
 
         week = Week.from_date(occurrence)
+        while now not in week and occurrence < now:
+            for _ in range(interval):
+                occurrence += timedelta(days=7)
+            week = Week.from_date(occurrence)
 
-        candidate = self.next(occurrence)
+        if now in week:
+            occurrence = now
+
+        candidate = occurrence.replace(hour=0, minute=0)
+        candidate = self.next(candidate)
         if candidate in week:
             return candidate
 

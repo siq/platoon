@@ -38,6 +38,9 @@ class ScheduleController(ModelController):
         return subject
 
     def _annotate_resource(self, request, model, resource, data):
-        resource['schedule'] = model.extract_dict(exclude='id name schedule_id', drop_none=True)
+        resource['schedule'] = model.extract_dict(exclude='id name cached_next schedule_id',
+            drop_none=True)
         resource['description'] = model.describe()
-        resource['next'] = model.next()
+        session = self.schema.session
+        resource['next'] = model.next(session)
+        session.commit()

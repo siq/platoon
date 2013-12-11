@@ -16,7 +16,7 @@ class Schedule(Resource):
         id = UUID(operators='equal')
         name = Text()
         description = Text(readonly=True)
-        next = DateTime(readonly=True)
+        next = DateTime(utc=True, readonly=True)
         schedule = Structure(
             structure={
                 'fixed': {

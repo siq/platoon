@@ -36,7 +36,8 @@ class Schedule(Model):
         else:
             return instance
 
-    def next(self, occurrence=None):
+    def next(self, *args, **params):
+        occurrence = params.get('occurrence', None)
         now = current_timestamp()
         if not occurrence or occurrence < now:
             occurrence = now
@@ -109,6 +110,7 @@ class MonthlySchedule(Schedule):
     anchor = DateTime(timezone=True, nullable=False)
     strategy = Enumeration('day weekday', nullable=False)
     interval = Integer(nullable=False)
+    cached_next = DateTime(timezone=True)
 
     def describe(self):
         parts = []
@@ -129,6 +131,22 @@ class MonthlySchedule(Schedule):
 
         parts.append('%s' % time)
         return ' / '.join(parts)
+
+    def next(self, session, *args, **params):
+        cache_results = params.get('cache_results', True)
+        cached_next = self.cached_next
+        if cached_next:
+            if cached_next > current_timestamp():
+                return cached_next
+            occurrence = cached_next
+        else:
+            occurrence = self.anchor
+
+        next = self._next_occurrence(occurrence)
+        if cache_results:
+            self.cached_next = next
+
+        return next
 
     def _next_occurrence(self, occurrence):
         anchor = self.anchor
@@ -165,6 +183,7 @@ class WeeklySchedule(Schedule):
     thursday = Boolean(nullable=False, default=False)
     friday = Boolean(nullable=False, default=False)
     saturday = Boolean(nullable=False, default=False)
+    cached_next = DateTime(timezone=True)
 
     def describe(self):
         parts = []
@@ -189,6 +208,22 @@ class WeeklySchedule(Schedule):
 
         parts.append('%s' % time)
         return ' / '.join(parts)
+
+    def next(self, session, *args, **params):
+        cache_results = params.get('cache_results', True)
+        cached_next = self.cached_next
+        if cached_next:
+            if cached_next > current_timestamp():
+                return cached_next
+            occurrence = cached_next
+        else:
+            occurrence = self.anchor
+
+        next = self._next_occurrence(occurrence)
+        if cache_results:
+            self.cached_next = next
+
+        return next
 
     def _next_occurrence(self, occurrence):
         anchor = self.anchor
