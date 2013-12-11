@@ -1,4 +1,4 @@
-from scheme.timezone import current_timestamp
+from scheme.timezone import current_timestamp, UTC
 from datetime import datetime, timedelta, time
 
 QUANTITIES = {
@@ -19,6 +19,11 @@ def advance_by_month(value, interval):
             value = value.replace(value.year, value.month + 1, value.day)
     else:
         return value
+
+def advance_by_week(value, interval):
+    for _ in range(interval):
+        value += timedelta(days=7)
+    return value
 
 def construct_weekday_step(occurrence):
     return '%s/%s' % (occurrence.isoweekday(), identify_weekday_step(occurrence))
@@ -144,8 +149,8 @@ class Specification(object):
             occurrence = now
 
         candidate = occurrence.replace(day=1, hour=0, minute=0)
-        now_month = now.replace(day=1, hour=1, minute=0)
-        while candidate < now_month:
+        current_month_threshold = now.replace(day=1, hour=0, minute=1)
+        while candidate < current_month_threshold:
             candidate = advance_by_month(candidate, interval)
 
         next = self.next(candidate)
@@ -159,20 +164,18 @@ class Specification(object):
             occurrence = now
 
         week = Week.from_date(occurrence)
-        while now not in week and occurrence < now:
-            for _ in range(interval):
-                occurrence += timedelta(days=7)
-            week = Week.from_date(occurrence)
-
-        if now in week:
-            occurrence = now
-
-        candidate = occurrence.replace(hour=0, minute=0)
-        candidate = self.next(candidate)
+        candidate = self.next(occurrence)
         if candidate in week and candidate > now:
             return candidate
 
-        candidate = datetime.combine(week.end + timedelta(days=1), time(0, 0, 0))
+        candidate = datetime.combine(week.start, time(0, 0, 0)).replace(tzinfo=UTC)
+        while now > candidate:
+            candidate = advance_by_week(candidate, interval)
+            week = Week.from_date(candidate)
+            if now in week:
+                candidate = now
+                break
+
         return self.next(candidate)
 
     def _check_date(self, value):
