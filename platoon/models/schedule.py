@@ -226,7 +226,7 @@ class WeeklySchedule(Schedule):
         return next
 
     def _next_occurrence(self, occurrence):
-        anchor = self.anchor
+        anchor = self.anchor.astimezone(UTC)
         if occurrence < anchor:
             occurrence = anchor
 
@@ -237,4 +237,5 @@ class WeeklySchedule(Schedule):
 
         specification = Specification(['*', '*', ';'.join(weekdays),
             str(anchor.hour), str(anchor.minute)])
-        return specification.next_weekly_interval(self.interval, occurrence)
+        return specification.next_weekly_interval(self.interval,
+            occurrence).replace(tzinfo=UTC)
