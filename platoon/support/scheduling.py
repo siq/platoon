@@ -169,7 +169,7 @@ class Specification(object):
 
         candidate = occurrence.replace(hour=0, minute=0)
         candidate = self.next(candidate)
-        if candidate in week:
+        if candidate in week and candidate > now:
             return candidate
 
         candidate = datetime.combine(week.end + timedelta(days=1), time(0, 0, 0))
