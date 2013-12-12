@@ -199,7 +199,7 @@ class Specification(object):
         return step in self.weekday[weekday]
 
     def _next_time(self, value):
-        candidate = value.replace(second=0, microsecond=0) + timedelta(minutes=1)
+        candidate = value.replace(second=0, microsecond=0)
         while candidate.date() == value.date():
             if candidate.hour not in self.hour:
                 if candidate.hour < 23:
