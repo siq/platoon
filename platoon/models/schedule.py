@@ -227,6 +227,7 @@ class WeeklySchedule(Schedule):
 
     def _next_occurrence(self, occurrence):
         anchor = self.anchor.astimezone(UTC)
+        occurrence = occurrence.astimezone(UTC)
         if occurrence < anchor:
             occurrence = anchor
 

@@ -163,12 +163,17 @@ class Specification(object):
         if not occurrence:
             occurrence = now
 
+        if occurrence > now and self._check_date(occurrence):
+            if occurrence.hour in self.hour and occurrence.minute in self.minute:
+                return occurrence
+
         week = Week.from_date(occurrence)
         candidate = self.next(occurrence)
         if candidate in week and candidate > now:
             return candidate
 
-        candidate = datetime.combine(week.start, time(0, 0, 0)).replace(tzinfo=UTC)
+        candidate = datetime.combine(week.start, time(0, 0, 0)).replace(
+                tzinfo=occurrence.tzinfo)
         while now > candidate:
             candidate = advance_by_week(candidate, interval)
             week = Week.from_date(candidate)
