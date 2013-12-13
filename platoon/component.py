@@ -24,10 +24,9 @@ class Platoon(Component):
 
 @schema.constructor()
 def bootstrap_purge_task(session):
-    schedule = models.Schedule(
+    schedule = models.FixedSchedule(
         id='00000000-0000-0000-0000-000000000001',
         name='Purge Schedule',
-        schedule='fixed',
         anchor=datetime(2000, 1, 1, 2, 0, 0, tzinfo=UTC),
         interval=86400)
     action = models.InternalAction(
