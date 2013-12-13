@@ -144,7 +144,7 @@ class Specification(object):
                     return candidate
 
     def next_monthly_interval(self, interval, occurrence=None):
-        now = current_timestamp()
+        now = current_timestamp() + timedelta(minutes=2)
         if not occurrence:
             occurrence = now
 
