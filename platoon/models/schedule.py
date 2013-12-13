@@ -151,7 +151,8 @@ class MonthlySchedule(Schedule):
     def _next_occurrence(self, occurrence):
         anchor = self.anchor
         if occurrence < anchor:
-            return anchor
+            occurrence = anchor
+            #return anchor
 
         if self.strategy == 'day':
             specification = Specification(['*', str(anchor.day), '*',
@@ -213,7 +214,7 @@ class WeeklySchedule(Schedule):
         cache_results = params.get('cache_results', True)
         cached_next = self.cached_next
         if cached_next:
-            if cached_next > current_timestamp():
+            if cached_next > current_timestamp() + timedelta(minutes=2):
                 return cached_next
             occurrence = cached_next
         else:
