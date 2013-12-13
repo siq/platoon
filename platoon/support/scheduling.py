@@ -148,8 +148,8 @@ class Specification(object):
         if not occurrence:
             occurrence = now
 
-        candidate = occurrence.replace(day=1, hour=0, minute=0)
-        current_month_threshold = now.replace(day=1, hour=0, minute=1)
+        candidate = occurrence.replace(day=1, hour=0, minute=1)
+        current_month_threshold = now.replace(day=1, hour=0, minute=0)
         while candidate < current_month_threshold:
             candidate = advance_by_month(candidate, interval)
 
