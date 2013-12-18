@@ -144,7 +144,7 @@ class Specification(object):
                     return candidate
 
     def next_monthly_interval(self, interval, occurrence=None):
-        now = current_timestamp() + timedelta(minutes=2)
+        now = current_timestamp()
         if not occurrence:
             occurrence = now
 
@@ -154,7 +154,7 @@ class Specification(object):
             candidate = advance_by_month(candidate, interval)
 
         next = self.next(candidate)
-        if next < now:
+        if next < now + timedelta(minutes=1):
             next = self.next(advance_by_month(candidate, interval))
         return next
 
@@ -167,9 +167,8 @@ class Specification(object):
             if occurrence.hour in self.hour and occurrence.minute in self.minute:
                 return occurrence
 
-        occurrence += timedelta(minutes=1)
         week = Week.from_date(occurrence)
-        candidate = self.next(occurrence)
+        candidate = self.next(occurrence + timedelta(minutes=1))
         if candidate in week and candidate > now:
             return candidate
 
