@@ -167,6 +167,7 @@ class Specification(object):
             if occurrence.hour in self.hour and occurrence.minute in self.minute:
                 return occurrence
 
+        occurrence += timedelta(minutes=1)
         week = Week.from_date(occurrence)
         candidate = self.next(occurrence)
         if candidate in week and candidate > now:
