@@ -30,7 +30,7 @@ class Process(Model):
     executor_endpoint_id = ForeignKey('executor_endpoint.id')
     tag = Text(nullable=False)
     timeout = Integer()
-    status = Enumeration('pending initiating executing aborted completed failed timedout',
+    status = Enumeration('pending initiating executing aborting aborted completed failed timedout',
         nullable=False, default='pending')
     input = Json()
     output = Json()
@@ -72,13 +72,13 @@ class Process(Model):
         if self.status not in ('pending', 'executing'):
             return
 
-        self.status = 'aborted'
+        self.status = 'aborting'
         self._schedule_task(session, 'report-abortion', limit=10)
 
     def end(self, session, status='completed', output=None, bypass_checks=False):
         if not bypass_checks:
             session.refresh(self, lockmode='update')
-            if self.status != 'executing':
+            if self.status not in ('aborting', 'executing', 'pending'):
                 return
 
         self.ended = current_timestamp()
@@ -146,7 +146,7 @@ class Process(Model):
                 taskqueue.enqueue(process, 'abandon')
 
     def report_abortion(self, session):
-        payload = self._construct_payload(status='aborted', for_executor=True)
+        payload = self._construct_payload(status='aborting', for_executor=True)
         return self.endpoint.request(payload)
 
     def report_end(self, session):
@@ -166,9 +166,9 @@ class Process(Model):
         return self.queue.endpoint.request(payload)
 
     def update(self, session, status=None, output=None, progress=None, state=None):
-        if status == 'aborted':
+        if status == 'aborting':
             self.abort(session)
-        elif status in ('completed', 'failed'):
+        elif status in ('aborted', 'completed', 'failed'):
             self.end(session, status, output)
         elif progress:
             self.progress = progress

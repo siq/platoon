@@ -14,7 +14,8 @@ class Process(Resource):
         queue_id = Token(nonempty=True, operators='equal')
         tag = Text(nonempty=True, operators='equal')
         timeout = Integer()
-        status = Enumeration('pending initiating executing completed failed aborted timedout',
+        status = Enumeration(
+            'pending initiating executing completed failed aborting aborted timedout',
             oncreate=False, operators='equal in')
         input = Field()
         output = Field(oncreate=False)
@@ -25,7 +26,7 @@ class Process(Resource):
 
     class update(Resource.update):
         schema = {
-            'status': Enumeration('aborted completed failed'),
+            'status': Enumeration('aborting aborted completed failed'),
             'output': Field(),
             'progress': Field(),
             'state': Field(),
