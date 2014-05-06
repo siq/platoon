@@ -39,6 +39,6 @@ class Task(Resource):
         retry_limit = Integer(nonnull=True, default=2)
         retry_timeout = Integer(nonnull=True, default=300)
         task = TaskStructure.clone(required=True)
-        completed = TaskStructure
-        failed = TaskStructure
+        completed = TaskStructure.clone()
+        failed = TaskStructure.clone()
         created = DateTime(utc=True, readonly=True)
