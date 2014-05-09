@@ -126,6 +126,7 @@ class ScheduledTask(Task):
 
         if not tasks:
             return
+
         for task in tasks:
             task.status = 'executing'
 
@@ -158,8 +159,13 @@ class ScheduledTask(Task):
             action_id=template.action_id, failed_action_id=template.failed_action_id,
             completed_action_id=template.completed_action_id, **params)
 
-    def update(self, session, data):
-        raise NotImplemented()
+    def update(self, session, occurrence=None, **data):
+        session.refresh(self, lockmode='update')
+        if occurrence is not None:
+            if self.status == 'pending':
+                self.occurrence = occurrence
+            else:
+                raise OperationError(token='cannot-update-task')
 
     def _calculate_retry(self, execution=None):
         timeout = self.retry_timeout
