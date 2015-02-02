@@ -1,4 +1,4 @@
 check process platoon pidfile ${VARPATH}/platoon.pid
   mode manual
-  start "${ENVPATH}/python/bin/bake -m spire.tasks spire.daemon config=${SVCPATH}/platoon/platoon.yaml" with timeout 300 seconds
-  stop "/bin/bash -c '/bin/kill $(<${VARPATH}/platoon.pid)'" with timeout 300 seconds
+  start "${SVCPATH}/platoon/platoon-ctl start" with timeout 300 seconds
+  stop "${SVCPATH}/platoon/platoon-ctl stop" with timeout 300 seconds

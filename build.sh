@@ -11,6 +11,9 @@ install -D -m 0644 platoon.yaml.install $BUILDPATH$SVCPATH/platoon/platoon.yaml
 interpolate svc/platoon.monit platoon.monit.install
 install -D -m 0644 platoon.monit.install $BUILDPATH$SVCPATH/platoon/platoon.monit
 
+interpolate svc/platoon-ctl.sh platoon-ctl.sh.install
+install -D -m 0755 platoon-ctl.sh.install $BUILDPATH$SVCPATH/platoon/platoon-ctl
+
 interpolate svc/platoonapi.yaml platoonapi.yaml.install
 install -D -m 0644 platoonapi.yaml.install $BUILDPATH$SVCPATH/platoon/platoonapi.yaml
 
