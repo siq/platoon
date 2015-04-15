@@ -1,4 +1,7 @@
-check process platoon pidfile ${VARPATH}/platoon.pid
+check process platoon pidfile /var/siq/run/platoon.pid
   mode manual
-  start "${SVCPATH}/platoon/platoon-ctl start" with timeout 300 seconds
-  stop "${SVCPATH}/platoon/platoon-ctl stop" with timeout 300 seconds
+  depends on postgresql
+  depends on uwsgi
+  depends on river
+  start "/siq/svc/platoon/platoon-ctl start" with timeout 300 seconds
+  stop "/siq/svc/platoon/platoon-ctl stop" with timeout 300 seconds
