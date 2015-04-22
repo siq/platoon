@@ -11,7 +11,7 @@ case "$1" in
       [[ -e /var/siq/run/nucleus-services-ready ]] && break
       #[[ -e /var/siq/run/nucleus-services-ready && $(nc -z 127.0.0.1 80) ]] && break
       sleep 1
-      let timeout--
+      let timeout-=1
     done
     [[ $timeout == 0 ]] && exit 1
     sleep 3

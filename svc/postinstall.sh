@@ -8,7 +8,9 @@ ${BINPATH}/bake -m spire.tasks spire.schema.deploy schema=platoon \
   config=${SVCPATH}/platoon/platoon.yaml
 
 # improvement 6496 need to stop before running
-${SVCPATH}/platoon/platoon-ctl stop
+if [[ -e ${VARPATH}/platoon.pid ]]; then
+  /bin/bash -c '/bin/kill $(<${VARPATH}/platoon.pid)'
+fi
 sleep 2
-${SVCPATH}/platoon/platoon-ctl start
+${ENVPATH}/python/bin/bake -m spire.tasks spire.daemon config=${SVCPATH}/platoon/platoon.yaml
 ln -sf ${SVCPATH}/platoon/platoonapi.yaml ${CONFPATH}/uwsgi/platoonapi.yaml
