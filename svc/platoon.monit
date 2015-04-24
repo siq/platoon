@@ -1,7 +1,5 @@
 check process platoon pidfile /var/siq/run/platoon.pid
   mode manual
-  depends on postgresql
-  depends on uwsgi
-  depends on river
-  start "/siq/svc/platoon/platoon-ctl start" with timeout 300 seconds
-  stop "/siq/svc/platoon/platoon-ctl stop" with timeout 300 seconds
+  start "/siq/svc/platoon/platoon-ctl start"
+  stop "/siq/svc/platoon/platoon-ctl stop"
+  if 5 restarts within 5 cycles then timeout
