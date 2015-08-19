@@ -1,5 +1,5 @@
 check process platoon pidfile /var/siq/run/platoon.pid
   mode manual
-  start "/siq/svc/platoon/platoon-ctl start"
+  start "/siq/svc/platoon/platoon-ctl start" with timeout 120 seconds
   stop "/siq/svc/platoon/platoon-ctl stop"
   if 5 restarts within 5 cycles then timeout
