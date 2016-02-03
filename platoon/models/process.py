@@ -232,7 +232,7 @@ class ProcessTask(Model):
 
     id = Identifier()
     process_id = ForeignKey('process.id', nullable=False, ondelete='CASCADE')
-    task_id = ForeignKey('scheduled_task.task_id', nullable=False)
+    task_id = ForeignKey('scheduled_task.task_id', nullable=False, ondelete='CASCADE')
     phase = Enumeration(PROCESS_TASK_ACTIONS, nullable=False)
 
     process = relationship(Process, backref=backref('process_tasks',
