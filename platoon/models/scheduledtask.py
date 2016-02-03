@@ -7,7 +7,7 @@ from spire.support.logs import LogHelper
 
 from platoon.constants import *
 from platoon.queue import ThreadPackage
-from platoon.models.action import TaskAction
+from platoon.models.action import InternalAction, TaskAction
 from platoon.models.recurringtask import RecurringTask
 from platoon.models.task import *
 
@@ -31,10 +31,11 @@ class ScheduledTask(Task):
     parent_id = ForeignKey('recurring_task.task_id', ondelete='CASCADE')
     parameters = Serialized()
 
-    parent = relationship('RecurringTask', primaryjoin='RecurringTask.task_id==ScheduledTask.parent_id',
-        cascade='all')
-    executions = relationship(TaskExecution, backref='task', order_by='TaskExecution.attempt',
-        cascade='all,delete-orphan', passive_deletes=True)
+    parent = relationship(
+        'RecurringTask',
+        primaryjoin='RecurringTask.task_id==ScheduledTask.parent_id')
+    executions = relationship(
+        TaskExecution, backref='task', order_by='TaskExecution.attempt')
 
     def __repr__(self):
         return 'ScheduledTask(id=%r, tag=%r)' % (self.id, self.tag)
@@ -54,7 +55,13 @@ class ScheduledTask(Task):
             retry_limit=retry_limit, retry_timeout=retry_timeout)
 
         if isinstance(action, dict):
-            task.action = TaskAction.polymorphic_create(action)
+            if action['type'] == 'internal':
+                try:
+                    task.action = InternalAction.load(session, purpose=action['purpose'])
+                except NoResultFound:
+                    task.action = TaskAction.polymorphic_create(action)
+            else:
+                task.action = TaskAction.polymorphic_create(action)
         else:
             task.action = action
 
@@ -138,8 +145,7 @@ class ScheduledTask(Task):
     @classmethod
     def purge(cls, session, lifetime):
         delta = current_timestamp() - timedelta(days=lifetime)
-        for task in session.query(cls).filter(cls.status=='completed', cls.occurrence < delta):
-            session.delete(task)
+        session.query(cls).filter(cls.status == 'completed', cls.occurrence < delta).delete()
 
     @classmethod
     def retry_executing_tasks(cls, session):

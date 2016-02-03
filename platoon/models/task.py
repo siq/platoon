@@ -45,9 +45,9 @@ class Task(Model):
     completed_action_id = ForeignKey('action.id', ondelete='CASCADE')
     created = DateTime(timezone=True, nullable=False, default=current_timestamp)
 
-    action = relationship(TaskAction, primaryjoin='TaskAction.id==Task.action_id',
-        cascade='all')
-    failed_action = relationship(TaskAction, primaryjoin='TaskAction.id==Task.failed_action_id',
-        cascade='all')
-    completed_action = relationship(TaskAction, primaryjoin='TaskAction.id==Task.completed_action_id',
-        cascade='all')
+    action = relationship(
+        TaskAction, primaryjoin='TaskAction.id==Task.action_id')
+    failed_action = relationship(
+        TaskAction, primaryjoin='TaskAction.id==Task.failed_action_id')
+    completed_action = relationship(
+        TaskAction, primaryjoin='TaskAction.id==Task.completed_action_id')
