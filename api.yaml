@@ -1,5 +1,4 @@
 uwsgi:
-  home: /home/jrm/.env/standard
   http-socket: 127.0.0.1:4321
   master: true
   module: spire.runtime.uwsgi
