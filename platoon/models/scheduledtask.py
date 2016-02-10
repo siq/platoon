@@ -33,9 +33,11 @@ class ScheduledTask(Task):
 
     parent = relationship(
         'RecurringTask',
-        primaryjoin='RecurringTask.task_id==ScheduledTask.parent_id')
+        primaryjoin='RecurringTask.task_id==ScheduledTask.parent_id',
+        cascade='all')
     executions = relationship(
-        TaskExecution, backref='task', order_by='TaskExecution.attempt')
+        TaskExecution, backref='task', order_by='TaskExecution.attempt',
+        cascade='all', passive_deletes=True)
 
     def __repr__(self):
         return 'ScheduledTask(id=%r, tag=%r)' % (self.id, self.tag)
@@ -145,7 +147,12 @@ class ScheduledTask(Task):
     @classmethod
     def purge(cls, session, lifetime):
         delta = current_timestamp() - timedelta(days=lifetime)
-        session.query(cls).filter(cls.status == 'completed', cls.occurrence < delta).delete()
+
+        subquery = session.query(cls.task_id).filter(
+            cls.status=='completed', cls.occurrence < delta)
+
+        session.query(Task).filter(
+            Task.id.in_(subquery)).delete(synchronize_session=False)
 
     @classmethod
     def retry_executing_tasks(cls, session):

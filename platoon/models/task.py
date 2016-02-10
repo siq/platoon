@@ -46,8 +46,10 @@ class Task(Model):
     created = DateTime(timezone=True, nullable=False, default=current_timestamp)
 
     action = relationship(
-        TaskAction, primaryjoin='TaskAction.id==Task.action_id')
+        TaskAction, primaryjoin='TaskAction.id==Task.action_id', cascade='all')
     failed_action = relationship(
-        TaskAction, primaryjoin='TaskAction.id==Task.failed_action_id')
+        TaskAction, primaryjoin='TaskAction.id==Task.failed_action_id',
+        cascade='all')
     completed_action = relationship(
-        TaskAction, primaryjoin='TaskAction.id==Task.completed_action_id')
+        TaskAction, primaryjoin='TaskAction.id==Task.completed_action_id',
+        cascade='all')

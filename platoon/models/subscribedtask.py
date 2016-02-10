@@ -63,11 +63,14 @@ class SubscribedTask(Task):
 
     @classmethod
     def purge(cls, session, lifetime):
-        session.query(cls).filter(
+        subquery = session.query(cls.task_id).filter(
             cls.activation_limit != None,
             cls.activation_limit > cls.activations,
             cls.activated < (current_timestamp() - timedelta(days=lifetime))
-        ).delete()
+        )
+
+        session.query(Task).filter(
+            Task.id.in_(subquery)).delete(synchronize_session=False)
 
         now = current_timestamp()
         for task in session.query(cls).filter(cls.timeout != None):
