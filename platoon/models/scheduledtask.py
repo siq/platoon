@@ -77,7 +77,7 @@ class ScheduledTask(Task):
             if isinstance(completed_action, dict):
                 task.completed_action = TaskAction.polymorphic_create(completed_action)
             else:
-                taks.completed_action = completed_action
+                task.completed_action = completed_action
 
         session.add(task)
         return task
@@ -125,6 +125,9 @@ class ScheduledTask(Task):
 
         if parent:
             parent.reschedule(session, self.occurrence)
+        """instead of leaving a completed task in the table, delete it now."""
+        if status == COMPLETED:
+            session.query(Task).filter_by(id = self.task_id).delete(synchronize_session=False)
 
     @classmethod
     def process_tasks(cls, taskqueue, session):
