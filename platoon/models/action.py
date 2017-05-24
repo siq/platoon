@@ -121,6 +121,9 @@ class HttpRequestAction(TaskAction):
         else:
             status = FAILED
 
+        if self.method == 'POST' and status in [COMPLETED, FAILED]:
+            session.query(HttpRequestAction).filter_by(action_id = self.action_id).delete(synchronize_session=False)
+
         return status, response.dump()
 
     def _prepare_body(self, task, body):
