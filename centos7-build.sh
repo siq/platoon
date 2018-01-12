@@ -2,8 +2,7 @@
 interpolate() {
   perl -p -e 's/\$\{([^}]+)\}/defined $ENV{$1} ? $ENV{$1} : $&/eg; s/\$\{([^}]+)\}//eg' $1 > $2
 }
-
-$(find -L $BUILDPATH -type f -executable -name python) setup.py install --no-compile
+python setup.py install --no-compile --single-version-externally-managed --record=/dev/null --prefix=${BUILDPATH}/usr --install-lib=${BUILDPATH}/usr/lib/python2.7/site-packages --install-scripts=${BUILDPATH}${BINPATH}
 
 interpolate svc/platoon.yaml platoon.yaml.install
 install -D -m 0644 platoon.yaml.install $BUILDPATH$SVCPATH/platoon/platoon.yaml
