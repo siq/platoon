@@ -3,17 +3,18 @@ interpolate() {
   perl -p -e 's/\$\{([^}]+)\}/defined $ENV{$1} ? $ENV{$1} : $&/eg; s/\$\{([^}]+)\}//eg' $1 > $2
 }
 
-python setup.py install --no-compile --record=/dev/null --prefix=${BUILDPATH}/usr --install-lib=${BUILDPATH}/usr/lib/python2.7/site-packages --install-scripts=${BUILDPATH}${BINPATH}
+$(find -L $BUILDPATH -type f -executable -name python) setup.py install --no-compile
+
 interpolate svc/platoon.yaml platoon.yaml.install
 install -D -m 0644 platoon.yaml.install $BUILDPATH$SVCPATH/platoon/platoon.yaml
 
-interpolate svc/platoon.monit platoon.monit.install
-install -D -m 0644 platoon.monit.install $BUILDPATH$SVCPATH/platoon/platoon.monit
+interpolate svc/appstack-platoon.service appstack-platoon.service
+install -D -m 0644 appstack-platoon.service $BUILDPATH/etc/systemd/system/appstack-platoon.service
 
-interpolate svc/platoon-ctl.sh platoon-ctl.sh.install
+interpolate svc/centos7-platoon-ctl.sh platoon-ctl.sh.install
 install -D -m 0755 platoon-ctl.sh.install $BUILDPATH$SVCPATH/platoon/platoon-ctl
 
-interpolate svc/platoonapi.yaml platoonapi.yaml.install
+interpolate svc/centos7-platoonapi.yaml platoonapi.yaml.install
 install -D -m 0644 platoonapi.yaml.install $BUILDPATH$SVCPATH/platoon/platoonapi.yaml
 
 interpolate svc/logrotate-platoonapi.conf logrotate-platoonapi.conf.install

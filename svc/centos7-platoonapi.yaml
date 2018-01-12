@@ -1,0 +1,37 @@
+uwsgi:
+  daemonize: ${LOGPATH}/platoonapi.log
+  group: platoon
+  home: /usr
+  http-socket: 127.0.0.1:4321
+  log-date: "%%Y-%%m-%%dT%%H:%%M:%%SL UWSGI"
+  master: true
+  module: spire.runtime.uwsgi
+  pidfile: ${VARPATH}/platoonapi.pid
+  processes: 4
+  procname-prefix-spaced: "[platoon]"
+  touch-logreopen: ${VARPATH}/platoonapi.logreopen
+  uid: platoon
+  vacuum: true
+spire:
+  registration_url: http://localhost:10000/nucleus/1.0/service
+  services:
+    - id: platoon
+components:
+  - platoon.component.Platoon
+configuration:
+  schema:platoon:
+    admin_url: postgresql://postgres@localhost/postgres
+    hstore: true
+    migrations: platoon:migrations
+    url: postgresql://postgres@localhost/platoon
+logging:
+  formatters:
+    standard:
+      (): spire.support.logs.LogFormatter
+  handlers:
+    stream:
+      class: logging.StreamHandler
+      formatter: standard
+  root:
+    level: DEBUG
+    handlers: [stream]
