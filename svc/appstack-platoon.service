@@ -1,6 +1,7 @@
 [Unit]
 Description=Appstack Platoon service
 After=syslog.target
+StopWhenUnneeded=yes
 
 [Service]
 ExecStart=/siq/svc/platoon/platoon-ctl start
@@ -12,6 +13,3 @@ Type=forking
 PIDFile=/var/siq/run/platoon.pid
 StandardError=syslog
 NotifyAccess=all
-
-[Install]
-WantedBy=multi-user.target
