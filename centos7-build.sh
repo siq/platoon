@@ -13,7 +13,7 @@ install -D -m 0644 appstack-platoon.service $BUILDPATH/etc/systemd/system/appsta
 interpolate svc/centos7-platoon-ctl.sh platoon-ctl.sh.install
 install -D -m 0755 platoon-ctl.sh.install $BUILDPATH$SVCPATH/platoon/platoon-ctl
 
-interpolate svc/centos7-platoonapi.yaml platoonapi.yaml.install
+interpolate svc/platoonapi.yaml platoonapi.yaml.install
 install -D -m 0644 platoonapi.yaml.install $BUILDPATH$SVCPATH/platoon/platoonapi.yaml
 
 interpolate svc/logrotate-platoonapi.conf logrotate-platoonapi.conf.install
