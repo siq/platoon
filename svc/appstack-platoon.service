@@ -13,3 +13,6 @@ Type=forking
 PIDFile=/var/siq/run/platoon.pid
 StandardError=syslog
 NotifyAccess=all
+
+[Install]
+WantedBy=appstack.service
