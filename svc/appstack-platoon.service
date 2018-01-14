@@ -1,7 +1,6 @@
 [Unit]
 Description=Appstack Platoon service
 After=syslog.target
-StopWhenUnneeded=yes
 
 [Service]
 ExecStart=/siq/svc/platoon/platoon-ctl start
