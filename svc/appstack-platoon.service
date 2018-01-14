@@ -1,6 +1,6 @@
 [Unit]
 Description=Appstack Platoon service
-After=syslog.target
+After=rsyslog.service
 
 [Service]
 ExecStart=/siq/svc/platoon/platoon-ctl start
